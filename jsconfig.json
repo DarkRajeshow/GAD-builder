@@ -6,11 +6,11 @@
                 "src/components/*"
             ],
             "@/lib/utils/*": [
-                "@/lib/utils/*"
+                "src/components/lib/utils/*"
             ]
         }
     },
     "include": [
         "src"
-, "@/lib"    ]
+, "src/components/lib"    ]
 }

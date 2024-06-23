@@ -7,13 +7,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "./components/ui/resizable"
-// import html2canvas from 'html2canvas';
-// import { jsPDF } from 'jspdf';
-// import { PDFDocument as PdfLibDocument } from 'pdf-lib';
-// import { saveAs } from 'file-saver';
-// import svgToPdf from 'svg-to-pdfkit';
-// import PDFDocument from 'pdfkit';
-// import blobStream from 'blob-stream';
 import { svg2pdf } from 'svg2pdf.js';
 import jsPDF from 'jspdf'
 
@@ -28,13 +21,12 @@ function App() {
 
   const designRef = useRef();
 
-  const generatePDF = () => {
+  const generatePDF = (fileName) => {
     const svgElement = designRef.current;
     if (!svgElement) {
       console.error('SVG element not found');
       return;
     }
-
 
     // Create a new jsPDF instance
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -60,7 +52,7 @@ function App() {
     svg2pdf(svgElement, pdf, { x, y, width: renderWidth, height: renderHeight })
       .then(() => {
         // Save the PDF
-        pdf.save('design.pdf');
+        pdf.save(`${fileName}.pdf`);
       })
       .catch((error) => {
         console.error('Error generating PDF:', error);

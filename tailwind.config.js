@@ -25,7 +25,7 @@ const config = {
         global: "#D8DADD",
         inner: "#F4F6F9",
         design: "#D4D6D8",
-        disappeared: "#EBEEF1",
+        disappeared: "#EBEEF1"
       },
       keyframes: {
         "accordion-down": {

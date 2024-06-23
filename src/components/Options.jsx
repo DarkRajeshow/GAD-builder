@@ -54,7 +54,7 @@ function Options({ designAttributes, setDesignAttributes }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
               </svg>}
             </label>
-            <label htmlFor={key} className="py-0 text-dark tex-lg cursor-pointer capitalize">
+            <label htmlFor={key} className="py-0 text-dark tex-lg cursor-pointer capitalize font-[430]">
               {key}
             </label>
           </label>

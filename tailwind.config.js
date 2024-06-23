@@ -26,10 +26,6 @@ const config = {
         inner: "#F4F6F9",
         design: "#D4D6D8",
         disappeared: "#EBEEF1",
-        orange: "#FF8C21",
-        green: "#62D639",
-        blue: "#99E382",
-        gray: "#E2E4E8"
       },
       keyframes: {
         "accordion-down": {

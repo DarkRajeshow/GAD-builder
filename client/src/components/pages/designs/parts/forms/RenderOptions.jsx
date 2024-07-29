@@ -1,8 +1,8 @@
 import { useContext } from "react";
-import { Context } from "../../context/Context";
+import { Context } from "../../../../../context/Context";
+import PropTypes from 'prop-types'
 
-const RenderOptions = (attribute, options) => {
-
+const RenderOptions = ({ attribute, options }) => {
     const { designAttributes, setDesignAttributes } = useContext(Context);
 
     const handleOptionChange = (attribute, option) => {
@@ -97,6 +97,12 @@ const RenderOptions = (attribute, options) => {
     ));
 };
 
-
+RenderOptions.propTypes = {
+    attribute: PropTypes.string.isRequired,
+    options: PropTypes.oneOfType([
+        PropTypes.array,
+        PropTypes.object
+    ]).isRequired
+};
 
 export default RenderOptions;

@@ -3,7 +3,6 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import PropTypes from 'prop-types';
 import { cn } from "../lib/utils";
 
-
 const AlertDialog = AlertDialogPrimitive.Root;
 
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
@@ -117,7 +116,6 @@ AlertDialogDescription.propTypes = {
 AlertDialogCancel.propTypes = {
     className: PropTypes.string,
 };
-
 
 export {
     AlertDialog,

@@ -1,12 +1,12 @@
-import ActionBar from "../../parts/ActionBar"
-import View from "../../parts/View";
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
+import { Context } from '../../../context/Context';
+import ActionBar from './parts/ActionBar';
+import View from './parts/View';
 import { svg2pdf } from 'svg2pdf.js';
 import jsPDF from 'jspdf';
-import { useParams } from "react-router-dom";
-import { Context } from '../../../context/Context';
 
-function DesignEdit() {
+const DesignEdit = () => {
     const { id } = useParams();
     const { fetchProject } = useContext(Context);
     const designRef = useRef();
@@ -18,7 +18,7 @@ function DesignEdit() {
         fetchProject(id);
     }, [id, fetchProject]);
 
-    const generatePDF = async (fileName) => {
+    const generatePDF = useCallback(async (fileName) => {
         const svgElement = designRef.current;
         if (!svgElement) {
             console.error('SVG element not found');
@@ -51,7 +51,7 @@ function DesignEdit() {
         } else {
             clonedSvgElement.setAttribute(
                 'viewBox',
-                `${(((viewBoxWidth + 32 - 520) / 2) + offset.x) * zoom} ${offset.y * zoom} ${520 * zoom} ${520 * zoom}`
+                `${(((viewBoxWidth + 32 - 520) / 2) + offset.x) * zoom} ${offset.y * zoom} ${520 * zoom} ${window.innerHeight * zoom}`
             );
         }
 
@@ -71,14 +71,14 @@ function DesignEdit() {
         } catch (error) {
             console.error('Error generating PDF:', error);
         }
-    };
+    }, [selectionBox, zoom, offset]);
 
     return (
-        <main className="h-screen fixed w-screen ">
+        <main className="h-screen fixed w-screen">
             <ActionBar generatePDF={generatePDF} />
             <View generatePDF={generatePDF} zoom={zoom} setZoom={setZoom} offset={offset} setOffset={setOffset} reference={designRef} selectionBox={selectionBox} setSelectionBox={setSelectionBox} />
         </main>
     );
-}
+};
 
 export default DesignEdit;

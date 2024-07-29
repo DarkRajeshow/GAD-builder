@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
-import filePath from '../../utility/filePath';
+import filePath from '../../../../utility/filePath';
 import { useContext, useState, useRef } from 'react';
-import { Context } from '../../context/Context';
-import { Slider } from '../ui/Slider';
-import { cn } from '../lib/utils';
+import { Context } from '../../../../context/Context';
+import { Slider } from '../../../ui/Slider';
+import { cn } from '../../../lib/utils';
 
 function View({ generatePDF, reference, setSelectionBox, zoom, setZoom, offset, setOffset }) {
     const { designAttributes, design, loading } = useContext(Context);
@@ -109,19 +109,20 @@ function View({ generatePDF, reference, setSelectionBox, zoom, setZoom, offset, 
             return `${filePath}${design.name}/${attribute}.svg`;
         }
 
-        const selectedOption = value.selectedOption;
-        const subOption = selectedOption ? value?.options[selectedOption]?.selectedOption : false;
-
-        if (!selectedOption || selectedOption === 'none' || !subOption) {
+        if (value.selectedOption === 'none' || !value.selectedOption || (!Array.isArray(value.options[value.selectedOption]) && value.options[value.selectedOption]?.selectedOption === "")) {
             return null;
         }
-
-        return `${filePath}${design.name}/${attribute}_${selectedOption}_${subOption}.svg`;
+        const selectedOption = value.selectedOption;
+        const subOption = value.options[selectedOption]?.selectedOption;
+        if (subOption) {
+            return `${filePath}${design.name}/${attribute}_${selectedOption}_${subOption}.svg`;
+        }
+        return `${filePath}${design.name}/${attribute}_${selectedOption}.svg`;
     };
 
     return (
-        <main className='h-[90vh]' ref={containerRef}>
-            <div className='bg-light/40 mx-4 rounded-lg h-[92%] transition-none overflow-hidden relative'
+        <main className='h-[89vh] flex flex-col gap-1' ref={containerRef}>
+            <div className='bg-white mx-6 rounded-lg h-[94%] transition-none overflow-hidden relative border-2 border-white/30 '
                 onWheel={handleWheel}
                 onMouseDown={handleMouseDown}
                 onDoubleClick={handleSelection}
@@ -129,30 +130,34 @@ function View({ generatePDF, reference, setSelectionBox, zoom, setZoom, offset, 
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
             >
-                <div className='flex items-center justify-center py-10'
+                <div className='flex items-center justify-center h-full'
                 // i want to add designRef to this 
                 >
                     {loading && <div className='h-6 w-6 my-auto border-dark border-2 border-b-transparent animate-spin rounded-full flex items-center justify-center' />}
                     {!loading && <svg
                         onClick={handleHoldSelection}
                         ref={reference}
-                        className={`components relative w-full h-[520px] transition-none`}
-                        viewBox={`0 0 ${window.innerWidth - 32} 520`}
+                        className={`components relative w-full h-full transition-none`}
+                        viewBox={`0 0 ${window.innerWidth - 32} ${window.innerHeight * 0.846}`}
                         xmlns="http://www.w3.org/2000/svg"
                     >
-                        {Object.entries(designAttributes).map(([attribute, value]) => (
-                            value && <image
-                                style={{
-                                    transform: `scale(${zoom}) translate(${offset.x}px, ${offset.y}px)`,
-                                    transformOrigin: 'center',
-                                    cursor: isDragging ? 'grabbing' : 'grab'
-                                }}
-                                key={attribute}
-                                href={getSVGPath(attribute, value)}
-                                height="520"
-                                width={window.innerWidth}
-                            />
-                        ))}
+                        {Object.entries(designAttributes).map(([attribute, value]) => {
+                            return (
+                                (
+                                    value && <image
+                                        style={{
+                                            transform: `scale(${zoom}) translate(${offset.x}px, ${offset.y}px)`,
+                                            transformOrigin: 'center',
+                                            cursor: isDragging ? 'grabbing' : 'grab'
+                                        }}
+                                        key={attribute}
+                                        href={getSVGPath(attribute, value)}
+                                        height={window.innerHeight * 0.846}
+                                        width={window.innerWidth - 32}
+                                    />
+                                )
+                            )
+                        })}
                     </svg>}
                 </div>
                 {absoluteSelection && (
@@ -198,16 +203,19 @@ function View({ generatePDF, reference, setSelectionBox, zoom, setZoom, offset, 
                     </div>
                 )}
             </div>
-            <div className="select-none bg-actionBar/40 h-[8%] flex justify-between items-center px-10">
+            <div className="select-none h-[7%] flex justify-between items-center mx-6 px-2 bg-white rounded-lg ">
                 <p>Footer</p>
-                <Slider
-                    max={300}
-                    step={1}
-                    min={30}
-                    value={[zoom * 100]}
-                    onValueChange={(value) => setZoom(value / 100)}
-                    className={cn("w-60 !transition-none")}
-                />
+                <div className='flex items-center justify-center gap-2'>
+                    <Slider
+                        max={300}
+                        step={1}
+                        min={30}
+                        value={[zoom * 100]}
+                        onValueChange={(value) => setZoom(value / 100)}
+                        className={cn("w-60 !transition-none")}
+                    />
+                    <span className='text-sm font-medium'>{Math.round(zoom * 100)}%</span>
+                </div>
             </div>
         </main>
     );

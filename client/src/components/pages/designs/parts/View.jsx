@@ -5,8 +5,8 @@ import { Context } from '../../../../context/Context';
 import { Slider } from '../../../ui/Slider';
 import { cn } from '../../../lib/utils';
 
-function View({ generatePDF, reference, setSelectionBox, zoom, setZoom, offset, setOffset }) {
-    const { designAttributes, design, loading } = useContext(Context);
+function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
+    const { designAttributes, design, loading, setSelectionBox, fileVersion } = useContext(Context);
 
     const [isDragging, setIsDragging] = useState(false);
 
@@ -104,20 +104,30 @@ function View({ generatePDF, reference, setSelectionBox, zoom, setZoom, offset, 
         setIsDragging(false);
     };
 
-    const getSVGPath = (attribute, value) => {
-        if (typeof value === 'boolean') {
-            return `${filePath}${design.name}/${attribute}.svg`;
+    const getSVGPath = (value) => {
+        if (typeof value !== 'object') return null;
+
+        const baseFilePath = `${filePath}${design.folder}`;
+
+        if (value.value && value.path) {
+            return `${baseFilePath}/${value.path}?v=${fileVersion}`;
         }
 
-        if (value.selectedOption === 'none' || !value.selectedOption || (!Array.isArray(value.options[value.selectedOption]) && value.options[value.selectedOption]?.selectedOption === "")) {
+        if (value.selectedOption === 'none') {
             return null;
         }
-        const selectedOption = value.selectedOption;
-        const subOption = value.options[selectedOption]?.selectedOption;
-        if (subOption) {
-            return `${filePath}${design.name}/${attribute}_${selectedOption}_${subOption}.svg`;
+
+        const subOption = value.selectedOption;
+        const subSubOption = value.options && value?.options[subOption]?.selectedOption;
+
+        if (subSubOption && subSubOption !== " ") {
+            return `${baseFilePath}/${value?.options[subOption]?.options[subSubOption]?.path}?v=${fileVersion}`;
         }
-        return `${filePath}${design.name}/${attribute}_${selectedOption}.svg`;
+
+        if (subOption && value?.options[subOption]?.path) {
+            return `${baseFilePath}/${value.options[subOption]?.path}?v=${fileVersion}`;
+        }
+        return null;
     };
 
     return (
@@ -141,17 +151,17 @@ function View({ generatePDF, reference, setSelectionBox, zoom, setZoom, offset, 
                         viewBox={`0 0 ${window.innerWidth - 32} ${window.innerHeight * 0.846}`}
                         xmlns="http://www.w3.org/2000/svg"
                     >
-                        {Object.entries(designAttributes).map(([attribute, value]) => {
+                        {designAttributes && Object.entries(designAttributes).map(([attribute, value]) => {
                             return (
                                 (
-                                    value && <image
+                                    ((value?.value) || (value?.selectedOption && value?.selectedOption !== "none")) && <image
                                         style={{
                                             transform: `scale(${zoom}) translate(${offset.x}px, ${offset.y}px)`,
                                             transformOrigin: 'center',
                                             cursor: isDragging ? 'grabbing' : 'grab'
                                         }}
                                         key={attribute}
-                                        href={getSVGPath(attribute, value)}
+                                        href={getSVGPath(value)}
                                         height={window.innerHeight * 0.846}
                                         width={window.innerWidth - 32}
                                     />
@@ -223,7 +233,6 @@ function View({ generatePDF, reference, setSelectionBox, zoom, setZoom, offset, 
 
 View.propTypes = {
     reference: PropTypes.object.isRequired,
-    setSelectionBox: PropTypes.func.isRequired,
     zoom: PropTypes.number.isRequired,
     setZoom: PropTypes.func.isRequired,
     offset: PropTypes.shape({

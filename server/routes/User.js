@@ -6,7 +6,7 @@ import {
     logoutUser,
     registerUser
 } from "../controllers/auth.js";
-import { getAllDesigns } from "../controllers/design.js";
+import { getUserDesigns } from "../controllers/design.js";
 
 
 const router = express.Router();
@@ -19,6 +19,6 @@ router.post("/logout", logoutUser);
 
 
 
-router.get("/designs", getAllDesigns);
+router.get("/designs", getUserDesigns);
 
 export default router;

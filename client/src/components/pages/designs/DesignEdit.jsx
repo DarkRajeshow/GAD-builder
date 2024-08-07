@@ -8,9 +8,8 @@ import jsPDF from 'jspdf';
 
 const DesignEdit = () => {
     const { id } = useParams();
-    const { fetchProject } = useContext(Context);
+    const { fetchProject, selectionBox } = useContext(Context);
     const designRef = useRef();
-    const [selectionBox, setSelectionBox] = useState(null);
     const [zoom, setZoom] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
 
@@ -51,7 +50,7 @@ const DesignEdit = () => {
         } else {
             clonedSvgElement.setAttribute(
                 'viewBox',
-                `${(((viewBoxWidth + 32 - 520) / 2) + offset.x) * zoom} ${offset.y * zoom} ${520 * zoom} ${window.innerHeight * zoom}`
+                `${(((viewBoxWidth - 520) / 2) + offset.x) * zoom} ${offset.y * zoom} ${520 * zoom} ${window.innerHeight * zoom}`
             );
         }
 
@@ -76,7 +75,7 @@ const DesignEdit = () => {
     return (
         <main className="h-screen fixed w-screen">
             <ActionBar generatePDF={generatePDF} />
-            <View generatePDF={generatePDF} zoom={zoom} setZoom={setZoom} offset={offset} setOffset={setOffset} reference={designRef} selectionBox={selectionBox} setSelectionBox={setSelectionBox} />
+            <View generatePDF={generatePDF} zoom={zoom} setZoom={setZoom} offset={offset} setOffset={setOffset} reference={designRef} selectionBox={selectionBox} />
         </main>
     );
 };

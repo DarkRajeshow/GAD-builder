@@ -1,41 +1,89 @@
-import { useState } from 'react'
+import { useContext } from 'react'
 import { AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger } from '../../../../ui/Dialog';
+import { Context } from '../../../../../context/Context';
+import { deleteDesignAttributes } from '../../../../../utility/api';
+import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 
 function DeleteForm() {
 
-    const [fileName, setFileName] = useState("");
+    const { menuOf, designAttributes, setDesignAttributes } = useContext(Context);
+    const { id } = useParams();
+
+    const tempDesignAttributes = JSON.parse(JSON.stringify(designAttributes));
+
+    const updatedValue = menuOf.length === 3 ? tempDesignAttributes[menuOf[0]].options[menuOf[1]].options[menuOf[2]] : menuOf.length === 2 ? tempDesignAttributes[menuOf[0]].options[menuOf[1]] : tempDesignAttributes[menuOf[0]];
+
+
+    const deleteValue = () => {
+        if (menuOf.length === 3) {
+            delete tempDesignAttributes[menuOf[0]].options[menuOf[1]].options[menuOf[2]];
+        } else if (menuOf.length === 2) {
+            delete tempDesignAttributes[menuOf[0]].options[menuOf[1]];
+        } else if (menuOf.length === 1) {
+            delete tempDesignAttributes[menuOf[0]];
+        }
+
+        return tempDesignAttributes;
+    };
+
+    function extractPaths() {
+        let paths = [];
+
+        function traverse(current) {
+            if (typeof current === 'object' && current !== null) {
+                if (current.path && current.path !== "none") {
+                    paths.push(current.path);
+                }
+                for (let key in current) {
+                    if (current[key]) {
+                        traverse(current[key]);
+                    }
+                }
+            }
+        }
+
+        traverse(updatedValue);
+        return paths;
+    }
+
+    const handleDelete = async () => {
+        const body = {
+            attributes: deleteValue(),
+            filesToDelete: extractPaths()
+        }
+
+        const { data } = await deleteDesignAttributes(id, body);
+
+        if (data.success) {
+            setDesignAttributes(tempDesignAttributes)
+            toast.success(data.status);
+            document.querySelector("#close").click();
+        }
+        else {
+            toast.error(data.status);
+        }
+    }
+
 
     return (
-        <form onSubmit={(e) => {
-            e.preventDefault();
-            setFileName("");
-        }}
-            className='flex flex-col gap-2'>
-            <AlertDialogTitle className="text-dark font-medium py-2">delete name</AlertDialogTitle>
-            <AlertDialogTrigger className='absolute top-3 right-3 shadow-none'>
+        <div className='flex flex-col gap-1 w-[350px]'>
+            <AlertDialogTitle className="text-dark font-medium capitalize text-xl pt-1">Delete <span className='text-red-700'>{menuOf[menuOf.length - 1]}</span>?</AlertDialogTitle>
+            <h1 className='pb-2'>This action cannot be undone. It will also delete all associated files. Are you sure?</h1>
+            <div className='flex items-center justify-start gap-2 text-sm'>
+                <button onClick={handleDelete} type='button' className='font-medium hover:bg-red-400/75 hover:border-dark border bg-red-300 py-1.5 px-4 rounded-md'>Yes</button>
+                <button onClick={() => {
+                    document.getElementById("close").click();
+                }} type='button' className='bg-white hover:border-dark border hover:bg-white/60 font-normal py-1.5 px-4 rounded-md'>Cancel</button>
+            </div>
+            <AlertDialogTrigger id='close' className='absolute top-3 right-3 shadow-none'>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
             </AlertDialogTrigger>
-            <AlertDialogDescription className='group cursor-text bg-theme/40 py-2 focus-within:bg-theme/60 rounded-md flex items-center justify-center gap-2 px-2'>
-                <label htmlFor='fileName' className=' p-2 bg-dark/5 rounded-md'>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6  text-dark/60 group-hover:text-dark h-full">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
-                    </svg>
-                </label>
-                <input
-                    id='fileName'
-                    required
-                    type="text"
-                    value={fileName}
-                    onChange={(e) => setFileName(e.target.value)}
-                    className="focus:bg-transparent bg-transparent h-full mt-0 w-full outline-none py-3 px-4"
-                    placeholder="e.g my-design"
-                />
-            </AlertDialogDescription>
-            <button type='submit' className='bg-blue-300 hover:bg-green-300 py-2 px-3 rounded-full text-dark font-medium mt-4'>Export as PDF</button>
-        </form>
+            <AlertDialogDescription hidden />
+        </div>
     )
 }
 

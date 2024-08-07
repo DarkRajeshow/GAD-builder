@@ -4,10 +4,15 @@ import fs from 'fs';
 
 const __dirname = path.resolve();
 
+
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const designName = req.body.name;
-        const uploadPath = path.join(__dirname, '..', 'server', 'public', 'uploads', designName);
+        const desingFolder = req.body.folder;
+        console.log(desingFolder);
+        
+        const uploadPath = path.join(__dirname, '..', 'server', 'public', 'uploads', desingFolder);
+        console.log(uploadPath);
 
         // Create the directory synchronously
         try {
@@ -18,14 +23,14 @@ const storage = multer.diskStorage({
         }
     },
     filename: function (req, file, cb) {
-        const attributeName = req.body.title;
-        cb(null, `${attributeName ? attributeName : "base"}.svg`);
+        const uniqueName = req.body.title ? req.body.title : file.originalname ? file.originalname : "base.svg";
+        cb(null, `${uniqueName}`);
     }
 });
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 6 * 1024 * 1024 } // 6MB limit
+    limits: { fileSize: 6 * 1024 * 1024 }
 });
 
 export default upload;

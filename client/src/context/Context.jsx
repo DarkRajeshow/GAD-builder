@@ -1,7 +1,8 @@
 import { createContext, useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
-import { getDesignByIdAPI, getRecentDesigns } from '../utility/api';
+import { getDesignByIdAPI, getRecentDesignsAPI } from '../utility/api';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 export const Context = createContext();
 
@@ -13,8 +14,15 @@ export const ContextProvider = ({ children }) => {
     const [designAttributes, setDesignAttributes] = useState({});
     const [RecentDesignLoading, setRecentDesignLoading] = useState(false);
     const [recentDesigns, setRecentDesigns] = useState([]);
+    const [menuOf, setMenuOf] = useState([]);
+    const [selectionBox, setSelectionBox] = useState(null);
+    const [fileVersion, setFileVersion] = useState(1)
+    const [operations, setOperations] = useState({});
+    const [newFiles, setNewFiles] = useState({});
+    const [updatedAttributes, setUpdatedAttributes] = useState({});
+    const [uniqueFileName, setUniqueFileName] = useState(`${uuidv4()}.svg`)
+    const [updatedValue, setUpdatedValue] = useState({ value: {}, version: 0 });
 
-    // functions
     const fetchProject = useCallback(async (id) => {
         try {
             setLoading(true);
@@ -33,11 +41,10 @@ export const ContextProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-
     const fetchRecentDesigns = useCallback(async (id) => {
         try {
             setRecentDesignLoading(true);
-            const { data } = await getRecentDesigns(id);
+            const { data } = await getRecentDesignsAPI(id);
 
             if (data.success) {
                 setRecentDesigns(data.recentDesigns)
@@ -50,7 +57,6 @@ export const ContextProvider = ({ children }) => {
         }
         setRecentDesignLoading(false);
     }, []);
-
 
     return (
         <Context.Provider value={{
@@ -68,9 +74,24 @@ export const ContextProvider = ({ children }) => {
             setRecentDesignLoading,
             recentDesigns,
             setRecentDesigns,
-
-
-            //funtions 
+            menuOf,
+            setMenuOf,
+            selectionBox,
+            setSelectionBox,
+            fileVersion,
+            setFileVersion,
+            operations,
+            setOperations,
+            newFiles,
+            setNewFiles,
+            updatedAttributes,
+            setUpdatedAttributes,
+            uniqueFileName,
+            setUniqueFileName,
+            updatedValue,
+            setUpdatedValue: useCallback((newValue) => 
+                setUpdatedValue(prev => ({ value: newValue, version: prev.version + 1 })),
+            []),
             fetchProject,
             fetchRecentDesigns
         }}>

@@ -8,28 +8,32 @@ function DesignCard({ design }) {
 
     const { RecentDesignLoading } = useContext(Context);
 
-    const getSVGPath = (attribute, value) => {
-        if (!value || value === "") {
-            return value
-        }
-        if (typeof value === 'boolean') {
-            return `${filePath}${design.name}/${attribute}.svg`;
+    const getSVGPath = (value) => {
+        if (typeof value !== 'object') return null;
+
+        const baseFilePath = `${filePath}${design.folder}`;
+
+        if (value.value && value.path) {
+            return `${baseFilePath}/${value.path}`;
         }
 
-        
-        if (!value.selectedOption || value.selectedOption === 'none' || value.options[value.selectedOption]?.selectedOption == "") {
+        if (value.selectedOption === 'none') {
             return null;
         }
-        
-        const selectedOption = value.selectedOption;
-        const subOption = value?.options[selectedOption]?.selectedOption;
 
-        if (selectedOption && subOption) {
-            return `${filePath}${design.name}/${attribute}_${selectedOption}_${subOption}.svg`;
+        const subOption = value.selectedOption;
+        const subSubOption = value.options && value?.options[subOption]?.selectedOption;
+
+        if (subSubOption && subSubOption !== " ") {
+            return `${baseFilePath}/${value?.options[subOption]?.options[subSubOption]?.path}`;
         }
 
-        return `${filePath}${design.name}/${attribute}_${selectedOption}.svg`;
+        if (subOption && value?.options[subOption]?.path) {
+            return `${baseFilePath}/${value.options[subOption]?.path}`;
+        }
+        return null;
     };
+
 
 
     return (
@@ -41,11 +45,11 @@ function DesignCard({ design }) {
                     viewBox="0 0 520 520"
                     xmlns="http://www.w3.org/2000/svg"
                 >
-                    {Object.entries(design.attributes).map(([attribute, value]) => {
+                    {design.attributes && Object.entries(design.attributes).map(([attribute, value]) => {
                         return (
                             value && <image
                                 key={attribute}
-                                href={getSVGPath(attribute, value)}
+                                href={getSVGPath(value)}
                                 x="0"
                                 y="0"
                                 width="520"
@@ -63,6 +67,7 @@ DesignCard.propTypes = {
     design: PropTypes.shape({
         _id: PropTypes.string.isRequired,
         name: PropTypes.string.isRequired,
+        folder: PropTypes.string.isRequired,
         attributes: PropTypes.objectOf(
             PropTypes.oneOfType([
                 PropTypes.bool,

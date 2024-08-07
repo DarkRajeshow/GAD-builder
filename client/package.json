@@ -25,7 +25,8 @@
     "sooner": "^1.1.4",
     "svg2pdf.js": "^2.2.4",
     "tailwind-merge": "^2.3.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

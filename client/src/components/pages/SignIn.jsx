@@ -27,7 +27,6 @@ const SignIn = () => {
         navigate('/')
       } else {
         toast.error(data.status);
-        console.log(data);
       }
     } catch (error) {
       toast.error('An error occurred during registration');

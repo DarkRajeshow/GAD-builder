@@ -60,9 +60,23 @@ export const getDesignByIdAPI = async (designId) => {
 };
 
 
-export const getRecentDesigns = async () => {
+export const getRecentDesignsAPI = async () => {
   return apiRequest('get', `/api/designs/recent`);
 };
+
+export const renameAttributeAPI = async (id, body) => {
+  return apiRequest('patch', `/api/designs/${id}/attributes/rename`, body);
+};
+
+export const updateDesignAttributes = async (id, body) => {
+  return apiRequest('patch', `/api/designs/${id}/attributes/update`, body);
+};
+
+
+export const deleteDesignAttributes = async (id, body) => {
+  return apiRequest('patch', `/api/designs/${id}/attributes/delete`, body);
+};
+
 
 
 export default api;

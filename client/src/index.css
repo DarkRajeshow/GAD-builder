@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 body {
-  @apply overflow-x-hidden w-screen min-h-screen font-normal bg-theme
+  @apply overflow-x-hidden w-screen min-h-screen font-normal bg-theme 
 }
 
 * {
@@ -15,23 +15,6 @@ body {
 
 a, label>span, div {
   @apply transition-all
-}
-
-::-webkit-scrollbar {
-  width: 4px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-zinc-900/70 rounded-md
-}
-
-::-webkit-scrollbar-thumb {
-  @apply border-2 rounded-md bg-zinc-700
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: #718096;
 }
 
 .svg-transform {

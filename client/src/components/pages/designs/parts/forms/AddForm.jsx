@@ -24,11 +24,11 @@ const AddForm = ({
     setNewCustomizationFile,
     tempDesignAttributes
 }) => {
-    
-    const { loading, design, fetchProject } = useContext(Context);
+
+    const { loading, design, fetchProject, uniqueFileName } = useContext(Context);
     const { id } = useParams();
 
-    
+
     // Function to handle file selection
     const handleFileChange = (e) => {
         setNewCustomizationFile(e.target.files[0]);
@@ -36,24 +36,13 @@ const AddForm = ({
 
     // Function to submit the form and create a new design
     const addNewAttribute = async () => {
+
         const formData = new FormData();
 
 
-        if (!newCustomizationFile) {
-            toast.error("SVG File is mandatory.")
-        }
         if (!loading) {
-            formData.append('name', design.name);
-            const title = levelOneNest
-                ? levelTwoNest
-                    ? `${levelOneNest}_${levelTwoNest}_${attributeFileName}`
-                    : `${levelOneNest}_${attributeFileName}`
-                : attributeFileName;
-
-            console.log(title);
-
-            formData.append('title', title);
-
+            formData.append('folder', design.folder);
+            formData.append('title', uniqueFileName);
 
             //tempDesignAttributes is a object
             formData.append('attributes', JSON.stringify(tempDesignAttributes));
@@ -84,7 +73,6 @@ const AddForm = ({
     const addNewParentAttribute = async () => {
         try {
             const { data } = await addNewParentAttributeAPI(id, tempDesignAttributes);
-            console.log(data);
             if (data.success) {
                 toast.success(data.status)
                 setNewCustomizationFile();
@@ -104,7 +92,12 @@ const AddForm = ({
     return (
         <form onSubmit={(e) => {
             e.preventDefault();
+
             if (attributeType !== "nestedParentLevel0" && attributeType !== "nestedParentLevel1") {
+                if (!newCustomizationFile) {
+                    toast.error("SVG File is mandatory.");
+                    return;
+                }
                 addNewAttribute();
             }
             else {
@@ -173,6 +166,7 @@ const AddForm = ({
                     <div>
                         <label className='text-black text-sm font-medium'>Select Parent Attribute</label>
                         <select
+                            required
                             value={levelOneNest}
                             onChange={(e) => setLevelOneNest(e.target.value)}
                             className="py-3 px-2 bg-white/80 rounded-md border w-full text-sm outline-none"
@@ -184,6 +178,7 @@ const AddForm = ({
                             <div>
                                 <label className='text-black text-sm font-medium'>Select Level 1 Nested Attribute</label>
                                 <select
+                                    required
                                     value={levelTwoNest}
                                     onChange={(e) => setLevelTwoNest(e.target.value)}
                                     className="py-3 px-2 bg-white/80 rounded-md border w-full text-sm outline-none"
@@ -220,7 +215,6 @@ const AddForm = ({
                         id='customization'
                         type="file"
                         multiple
-                        required
                         accept='image/svg+xml'
                         onChange={(e) => handleFileChange(e)}
                         className="hidden"
@@ -255,7 +249,8 @@ AddForm.propTypes = {
     setLevelTwoNest: PropTypes.func.isRequired,
     newCustomizationFile: PropTypes.object,
     setNewCustomizationFile: PropTypes.func.isRequired,
-    tempDesignAttributes: PropTypes.object
+    tempDesignAttributes: PropTypes.object,
+    uniqueFileName: PropTypes.string
 };
 
 export default AddForm;

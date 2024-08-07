@@ -27,7 +27,7 @@ function App() {
   return (
     <main>
       {shouldRenderNav && <Navbar />}
-      <Toaster duration={1500} richColors position="top-center" theme='light' />
+      <Toaster duration={1500} position="bottom-right" richColors theme='light' />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/sign-up" element={<SignUp />} />

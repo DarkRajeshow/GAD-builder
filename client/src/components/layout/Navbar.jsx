@@ -11,12 +11,14 @@ import {
     AlertDialogDescription,
     AlertDialogTrigger,
 } from "../ui/Dialog"
+import { v4 as uuidv4 } from 'uuid';
+
 
 const Navbar = () => {
     const { user, setUser } = useContext(Context);
     const [isAvatarOpen, setIsAvatarOpen] = useState(false);
     const [designName, setDesignName] = useState("");
-    const [baseFile, setBaseFile] = useState();
+    // const [baseFile, setBaseFile] = useState();
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -75,38 +77,61 @@ const Navbar = () => {
 
     const isAuthenticated = user.username ? true : false;
 
-    // Function to handle file selection
-    const handleFileChange = (e) => {
-        setBaseFile(e.target.files[0]);
-    };
+    // // Function to handle file selection
+    // const handleFileChange = (e) => {
+    //     setBaseFile(e.target.files[0]);
+    // };
 
-    const handleDrop = (e, setFiles) => {
-        e.preventDefault();
-        if (e.dataTransfer.files[0].type === 'image/svg+xml') {
-            setFiles(e.dataTransfer.files[0]);
-        } else {
-            toast.error('Please choose a PDF file.');
-        }
-    };
+    // const handleDrop = (e, setFiles) => {
+    //     e.preventDefault();
+    //     if (e.dataTransfer.files[0].type === 'image/svg+xml') {
+    //         setFiles(e.dataTransfer.files[0]);
+    //     } else {
+    //         toast.error('Please choose a PDF file.');
+    //     }
+    // };
 
-    const handleDragOver = (e) => {
-        e.preventDefault();
-    };
+    // const handleDragOver = (e) => {
+    //     e.preventDefault();
+    // };
 
-    const handleClick = (inputId) => {
-        document.getElementById(inputId).click();
-    };
+    // const handleClick = (inputId) => {
+    //     document.getElementById(inputId).click();
+    // };
 
     // Function to submit the form and create a new design
+    // const createEmptyDesign = async (e) => {
+    //     e.preventDefault();
+    //     const formData = new FormData();
+    //     formData.append('name', designName);
+    //     formData.append('baseFile', baseFile);
+
+    //     try {
+    //         const { data } = await createEmptyDesignAPI(formData);
+    //         console.log(data);
+    //         if (data.success) {
+    //             toast.success(data.status);
+    //             navigate(`/designs/${data.id}`);
+    //             setDesignName("");
+    //         } else {
+    //             toast.error(data.status);
+    //         }
+    //     } catch (error) {
+    //         console.log(error);
+    //         toast.error('Failed to create design.');
+    //     }
+    // };
     const createEmptyDesign = async (e) => {
         e.preventDefault();
-        const formData = new FormData();
-        formData.append('name', designName);
-        formData.append('baseFile', baseFile);
 
+        
         try {
-            const { data } = await createEmptyDesignAPI(formData);
-            console.log(data);
+            const uniqueFolder = await uuidv4();
+            const { data } = await createEmptyDesignAPI({
+                name: designName,
+                folder: uniqueFolder
+            });
+            
             if (data.success) {
                 toast.success(data.status);
                 navigate(`/designs/${data.id}`);
@@ -137,7 +162,7 @@ const Navbar = () => {
 
     return (
         <AlertDialog className='rounded-lg col-span-3 overflow-hidded'>
-            <AlertDialogContent className={'bg-actionBar h-auto'}>
+            <AlertDialogContent className={'bg-actionBar h-auto w-[350px] p-6'}>
                 <form onSubmit={createEmptyDesign} className='flex flex-col gap-2'>
                     <AlertDialogTitle className="text-dark font-medium py-2">Create New Design</AlertDialogTitle>
                     <AlertDialogTrigger className='absolute top-3 right-3 shadow-none'>
@@ -188,7 +213,7 @@ const Navbar = () => {
                             ))}
                         </div> */}
 
-                        <div className='flex flex-col gap-2'>
+                        {/* <div className='flex flex-col gap-2'>
                             <div className='font-medium mt-4'>Upload Base file. <span className='text-red-500'>*</span> </div>
                             {baseFile && <div className='px-4 py-2 rounded-lg bg-blue-200'>
                                 <div>Selected file : <span className='font-medium text-red-800'>{baseFile.name}</span> </div>
@@ -212,7 +237,7 @@ const Navbar = () => {
                             >
                                 <span className='text-sm w-60 mx-auto text-center'>Drag and drop the base structure PDF file for the design.</span>
                             </div>
-                        </div>
+                        </div> */}
                     </AlertDialogDescription>
                     <button type='submit' className='bg-green-200 hover:bg-green-300 py-2 px-3 rounded-full text-dark font-medium mt-4'>Create</button>
                 </form>

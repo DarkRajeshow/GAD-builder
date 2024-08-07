@@ -1,15 +1,18 @@
-import { useState } from 'react'
 import { AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger } from '../../../../ui/Dialog';
 import PropTypes from 'prop-types';
+import {  useContext, useState } from 'react';
+import { Context } from '../../../../../context/Context';
 
 
 function ExportForm({ generatePDF }) {
 
     const [fileName, setFileName] = useState("");
+    const {setSelectionBox} = useContext(Context);
 
     return (
         <form onSubmit={(e) => {
             e.preventDefault();
+            setSelectionBox(null)
             generatePDF(fileName);
             document.querySelector("#exportBtn").click();
             setFileName("");

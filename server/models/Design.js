@@ -12,6 +12,11 @@ const DesignSchema = new Schema({
     required: true,
     unique: true
   },
+  folder: {
+    type: String,
+    required: true,
+    unique: true
+  },
   attributes: {
     type: Schema.Types.Mixed,
     required: true

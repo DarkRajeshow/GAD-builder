@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { useParams } from 'react-router-dom';
 
 const RenameForm = () => {
-    const { menuOf, designAttributes, setDesignAttributes } = useContext(Context);
+    const { menuOf, designAttributes, setDesignAttributes, generateStructure } = useContext(Context);
     const [newAttributeName, setNewAttributeName] = useState(menuOf[menuOf.length - 1]);
     const [renameLoading, setRenameLoading] = useState(false);
     const { id } = useParams();
@@ -61,8 +61,11 @@ const RenameForm = () => {
 
             renameAttribute(updatedAttributes, menuOf, newAttributeName);
 
+            
+            let structure = generateStructure(updatedAttributes)
+    
             const body = {
-                attributes: updatedAttributes
+                structure: structure
             }
 
             const { data } = await renameAttributeAPI(id, body);

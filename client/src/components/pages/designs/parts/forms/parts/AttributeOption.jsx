@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'sonner';
 import { handleDragOver } from '../../../../../../utility/dragDrop';
@@ -52,32 +52,43 @@ function AttributeOption({ parentOption = "", nestedIn = "", setUpdatedValue, up
     }
 
     const handleRename = (e) => {
+        const newOptionName = e.target.value;
         const tempUpdateValue = JSON.parse(JSON.stringify(updatedValue));
 
+        // Check if the new option name already exists in the parent options
+        const optionsToCheck = parentOption
+            ? tempUpdateValue.options[parentOption].options
+            : tempUpdateValue.options;
+
+        if (optionsToCheck[newOptionName]) {
+            toast.error(`Option name "${newOptionName}" already exists! Please choose a different name.`);
+            return; // Exit the function to prevent further processing
+        }
+
+        // Proceed with renaming the option since it doesn't exist
         if (parentOption) {
-            tempUpdateValue.options[parentOption].options[e.target.value] = tempUpdateValue.options[parentOption].options[renamedOption];
+            tempUpdateValue.options[parentOption].options[newOptionName] = tempUpdateValue.options[parentOption].options[renamedOption];
             delete tempUpdateValue.options[parentOption].options[renamedOption];
+
             if (tempUpdateValue.options[parentOption].selectedOption === renamedOption) {
-                tempUpdateValue.options[parentOption].selectedOption = e.target.value;
+                tempUpdateValue.options[parentOption].selectedOption = newOptionName;
             }
-        }
-        else {
-            tempUpdateValue.options[e.target.value] = tempUpdateValue.options[renamedOption];
+        } else {
+            tempUpdateValue.options[newOptionName] = tempUpdateValue.options[renamedOption];
             delete tempUpdateValue.options[renamedOption];
+
             if (tempUpdateValue.selectedOption === renamedOption) {
-                tempUpdateValue.selectedOption = e.target.value;
+                tempUpdateValue.selectedOption = newOptionName;
             }
         }
+
         setUpdatedValue(tempUpdateValue);
-        setRenamedOption(e.target.value);
-    }
+        setRenamedOption(newOptionName);
+    };
 
     const selectedFile = value?.path ? newFiles[value?.path] : null;
 
     const baseFilePath = `${filePath}${design.folder}`;
-    useEffect(() => {
-        console.log(value);
-    }, [value])
 
     if (nestedIn) {
         if (!updatedValue?.options[nestedIn]?.options[renamedOption]) {

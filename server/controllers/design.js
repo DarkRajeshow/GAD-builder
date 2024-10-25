@@ -20,12 +20,15 @@ export const createEmptyDesign = async (req, res, next) => {
         const userId = decodedToken.userId;
 
         const {
-            name,
-            folder
+            designType,
+            selectedCategory,
+            designInfo,
+            folder,
+            structure,
         } = req.body;
 
-        if (!name || !folder) {
-            return res.json({ success: false, status: 'Name is a required field.' });
+        if (!folder || !designType || !designInfo || !structure || !selectedCategory) {
+            return res.json({ success: false, status: 'Something went wrong.' });
         }
 
         const user = await User.findById(userId);
@@ -35,9 +38,11 @@ export const createEmptyDesign = async (req, res, next) => {
 
         const design = new Design({
             user: userId,
-            name,
+            designType,
+            designInfo,
+            selectedCategory,
             folder,
-            attributes: {}
+            structure,
         });
         await design.save();
 
@@ -70,10 +75,10 @@ export const addNewAttribute = async (req, res, next) => {
 
         const designId = req.params.id;
 
-        const { attributes } = req.body;
+        const { structure } = req.body;
 
-        if (!attributes) {
-            return res.json({ success: false, status: 'Update attributes are missing.' });
+        if (!structure) {
+            return res.json({ success: false, status: 'Update attributes is missing.' });
         }
 
         if (!req.file) {
@@ -85,18 +90,108 @@ export const addNewAttribute = async (req, res, next) => {
             return res.json({ success: false, status: 'You do not have access to modify the design.' });
         }
 
-        const parsedAttributes = JSON.parse(attributes);
+        const parsedStructure = JSON.parse(structure);
 
         if (design.user.toString() !== userId) {
             return res.json({ success: false, status: 'You are not authorized.' });
         }
 
-        design.attributes = parsedAttributes;
+        design.structure = parsedStructure;
         await design.save();
 
         return res.json({
             success: true,
             status: 'Attribute added.',
+            id: design._id
+        });
+    } catch (error) {
+        console.error(error);
+        return res.json({ success: false, status: 'Problem in file upload.' });
+    }
+};
+
+// PATCH /api/designs/id/attributes - to add new file and update attributes of design
+export const uploadBaseDrawing = async (req, res, next) => {
+    try {
+        if (!req.cookies.jwt) {
+            return res.json({ success: false, status: 'Login to add new Design.' });
+        }
+
+        const decodedToken = jwt.verify(req.cookies.jwt, process.env.JWT_SECRET);
+        const userId = decodedToken.userId;
+
+        const designId = req.params.id;
+
+        const { structure, selectedCategory } = req.body;
+
+        if (!structure || !selectedCategory) {
+            return res.json({ success: false, status: 'Update attributes or selectedCategory is missing.' });
+        }
+
+        if (!req.file) {
+            return res.json({ success: false, status: 'Base SVG Customization File is a required field.' });
+        }
+
+        const design = await Design.findById(designId);
+        if (!design) {
+            return res.json({ success: false, status: 'You do not have access to modify the design.' });
+        }
+
+        const parsedStructure = JSON.parse(structure);
+
+        if (design.user.toString() !== userId) {
+            return res.json({ success: false, status: 'You are not authorized.' });
+        }
+        
+        design.selectedCategory = selectedCategory
+        design.structure = parsedStructure;
+        await design.save();
+
+        return res.json({
+            success: true,
+            status: 'Base Drawing is Added.',
+            id: design._id
+        });
+    } catch (error) {
+        console.error(error);
+        return res.json({ success: false, status: 'Problem in file upload.' });
+    }
+};
+
+// PATCH /api/designs/id/attributes - to add new file and update attributes of design
+export const shiftToSelectedCategory = async (req, res, next) => {
+    try {
+        if (!req.cookies.jwt) {
+            return res.json({ success: false, status: 'Login to add new Design.' });
+        }
+
+        const decodedToken = jwt.verify(req.cookies.jwt, process.env.JWT_SECRET);
+        const userId = decodedToken.userId;
+
+        const designId = req.params.id;
+
+        const { selectedCategory } = req.body;
+
+        if (!selectedCategory) {
+            return res.json({ success: false, status: 'Selected Category is missing.' });
+        }
+
+        const design = await Design.findById(designId);
+
+        if (!design) {
+            return res.json({ success: false, status: 'Design not found.' });
+        }
+
+        if (design.user.toString() !== userId) {
+            return res.json({ success: false, status: 'You are not authorized.' });
+        }
+
+        design.selectedCategory = selectedCategory
+        await design.save();
+
+        return res.json({
+            success: true,
+            status: `Shifted to ${selectedCategory}.`,
             id: design._id
         });
     } catch (error) {
@@ -118,10 +213,10 @@ export const addNewParentAttribute = async (req, res, next) => {
 
         const designId = req.params.id;
 
-        const attributes = req.body;
+        const structure = req.body;
 
-        if (!attributes) {
-            return res.json({ success: false, status: 'Update attributes are missing.' });
+        if (!structure) {
+            return res.json({ success: false, status: 'Updated structure is missing.' });
         }
 
         const design = await Design.findById(designId);
@@ -133,7 +228,7 @@ export const addNewParentAttribute = async (req, res, next) => {
             return res.json({ success: false, status: 'You are not authorized.' });
         }
 
-        design.attributes = attributes;
+        design.structure = structure;
         await design.save();
 
         return res.json({
@@ -160,10 +255,10 @@ export const renameAttributes = async (req, res) => {
 
         const designId = req.params.id;
 
-        const { attributes } = req.body;
+        const { structure } = req.body;
 
-        if (!attributes) {
-            return res.json({ success: false, status: 'Sorry, Update attributes are missing.' });
+        if (!structure) {
+            return res.json({ success: false, status: 'Sorry, Updated structure is missing.' });
         }
 
         const design = await Design.findById(designId);
@@ -176,7 +271,7 @@ export const renameAttributes = async (req, res) => {
             return res.json({ success: false, status: 'You are not authorized.' });
         }
 
-        design.attributes = attributes;
+        design.structure = structure;
         await design.save();
 
 
@@ -204,10 +299,10 @@ export const deleteAttributes = async (req, res) => {
 
         const designId = req.params.id;
 
-        const { attributes, filesToDelete } = req.body;
+        const { structure, filesToDelete } = req.body;
 
-        if (!attributes) {
-            return res.json({ success: false, status: 'Sorry, Update attributes are missing.' });
+        if (!structure) {
+            return res.json({ success: false, status: 'Sorry, Update structure is missing.' });
         }
 
         const design = await Design.findById(designId);
@@ -247,7 +342,7 @@ export const deleteAttributes = async (req, res) => {
             console.warn(`Folder path does not exist: ${folderPath}`);
         }
 
-        design.attributes = attributes;
+        design.structure = structure;
         await design.save();
 
         res.json({
@@ -273,10 +368,10 @@ export const updateUnParsedAttributes = async (req, res) => {
 
         const designId = req.params.id;
 
-        const { attributes } = req.body;
+        const { structure } = req.body;
 
-        if (!attributes) {
-            return res.json({ success: false, status: 'Sorry, Update attributes are missing.' });
+        if (!structure) {
+            return res.json({ success: false, status: 'Sorry, Update structure are missing.' });
         }
 
         const design = await Design.findById(designId);
@@ -289,9 +384,9 @@ export const updateUnParsedAttributes = async (req, res) => {
             return res.json({ success: false, status: 'You are not authorized.' });
         }
 
-        const parsedAttributes = JSON.parse(attributes);
+        const parsedStructure = JSON.parse(structure);
 
-        design.attributes = parsedAttributes;
+        design.structure = parsedStructure;
         await design.save();
 
 

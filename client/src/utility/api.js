@@ -50,6 +50,14 @@ export const addNewAttributeAPI = async (id, formData) => {
   return apiRequest('patch', `/api/designs/${id}/attributes/option`, formData);
 };
 
+export const updateBaseDrawingAPI = async (id, formData) => {
+  return apiRequest('patch', `/api/designs/${id}/attributes/base`, formData);
+};
+
+export const shiftToSelectedCategoryAPI = async (id, formData) => {
+  return apiRequest('patch', `/api/designs/${id}/attributes/shift`, formData);
+};
+
 export const addNewParentAttributeAPI = async (id, updatedAttributes) => {
   return apiRequest('patch', `/api/designs/${id}/attributes/parent`, updatedAttributes);
 };

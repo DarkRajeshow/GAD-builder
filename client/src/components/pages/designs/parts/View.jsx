@@ -4,9 +4,10 @@ import { useContext, useState, useRef } from 'react';
 import { Context } from '../../../../context/Context';
 import { Slider } from '../../../ui/Slider';
 import { cn } from '../../../lib/utils';
+// import LeaderArrowText from './LoaderArrowText';
 
 function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
-    const { designAttributes, design, loading, setSelectionBox, fileVersion } = useContext(Context);
+    const { designAttributes, design, loading, setSelectionBox, fileVersion, baseDrawing } = useContext(Context);
 
     const [isDragging, setIsDragging] = useState(false);
 
@@ -20,7 +21,7 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
     const containerRef = useRef(null);
 
     const handleWheel = (event) => {
-        setZoom(prevZoom => Math.min(Math.max(prevZoom + event.deltaY * -0.001, 0.3), 3));
+        setZoom(prevZoom => Math.min(Math.max(prevZoom + event.deltaY * -0.001, 0.2), 6));
     };
 
     const handleMouseDown = (event) => {
@@ -74,7 +75,10 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
         if (isDragging) {
             const dx = event.clientX - selectionState.lastMousePosition.x;
             const dy = event.clientY - selectionState.lastMousePosition.y;
-            setOffset(prevOffset => ({ x: prevOffset.x + dx, y: prevOffset.y + dy }));
+
+            // after
+            setOffset(prevOffset => ({ x: prevOffset.x + (dx / zoom), y: prevOffset.y + (dy / zoom) }));
+
             setSelectionState(prevState => ({
                 ...prevState,
                 lastMousePosition: { x: event.clientX, y: event.clientY },
@@ -151,6 +155,16 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                         viewBox={`0 0 ${window.innerWidth - 32} ${window.innerHeight * 0.846}`}
                         xmlns="http://www.w3.org/2000/svg"
                     >
+                        {baseDrawing?.path && <image
+                            style={{
+                                transform: `scale(${zoom}) translate(${offset.x}px, ${offset.y}px)`,
+                                transformOrigin: 'center',
+                                cursor: isDragging ? 'grabbing' : 'grab'
+                            }}
+                            href={`${filePath}${design.folder}/${baseDrawing?.path}?v=${fileVersion}`}
+                            height={window.innerHeight * 0.846}
+                            width={window.innerWidth - 32}
+                        />}
                         {designAttributes && Object.entries(designAttributes).map(([attribute, value]) => {
                             return (
                                 (
@@ -217,9 +231,9 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                 <p>Footer</p>
                 <div className='flex items-center justify-center gap-2'>
                     <Slider
-                        max={300}
+                        max={600}
                         step={1}
-                        min={30}
+                        min={20}
                         value={[zoom * 100]}
                         onValueChange={(value) => setZoom(value / 100)}
                         className={cn("w-60 !transition-none")}

@@ -25,7 +25,7 @@ const AddForm = ({
     tempDesignAttributes
 }) => {
 
-    const { loading, design, fetchProject, uniqueFileName } = useContext(Context);
+    const { loading, design, fetchProject, uniqueFileName, generateStructure } = useContext(Context);
     const { id } = useParams();
 
 
@@ -44,8 +44,11 @@ const AddForm = ({
             formData.append('folder', design.folder);
             formData.append('title', uniqueFileName);
 
+
+            let structure = generateStructure(tempDesignAttributes)
+
             //tempDesignAttributes is a object
-            formData.append('attributes', JSON.stringify(tempDesignAttributes));
+            formData.append('structure', JSON.stringify(structure));
             formData.append('svgFile', newCustomizationFile);
         }
 
@@ -71,14 +74,15 @@ const AddForm = ({
 
     // Function to submit the form and create a new design
     const addNewParentAttribute = async () => {
+        let structure = generateStructure(tempDesignAttributes)
+
         try {
-            const { data } = await addNewParentAttributeAPI(id, tempDesignAttributes);
+            const { data } = await addNewParentAttributeAPI(id, structure);
             if (data.success) {
                 toast.success(data.status)
                 setNewCustomizationFile();
                 setAttributeFileName("");
                 fetchProject(id);
-
             } else {
                 toast.error(data.status);
             }

@@ -9,9 +9,12 @@ import {
     getRecentDesigns,
     getUserDesigns,
     renameAttributes,
-    updateUnParsedAttributes
+    shiftToSelectedCategory,
+    updateUnParsedAttributes,
+    uploadBaseDrawing
 } from "../controllers/design.js";
 import upload from "../utility/multer.js";
+import optimizeSVG from '../middleware/optimizeSVG.js'
 
 
 const router = express.Router();
@@ -23,12 +26,18 @@ router.post("/", createEmptyDesign);
 
 //attribute operations 
 //1. add attributes
-router.patch("/:id/attributes/option", upload.single('svgFile'), addNewAttribute);
+//optimized 2
+router.patch("/:id/attributes/option", upload.single('svgFile'), optimizeSVG, addNewAttribute);
+router.patch("/:id/attributes/base", upload.single('svgFile'), optimizeSVG, uploadBaseDrawing);
+router.patch("/:id/attributes/shift", shiftToSelectedCategory);
 router.patch("/:id/attributes/parent", addNewParentAttribute);
 
 //2. update attributes
 router.patch("/:id/attributes/rename", renameAttributes);
-router.patch("/:id/attributes/update", upload.array('files'), updateUnParsedAttributes);
+
+//optimized 1
+router.patch("/:id/attributes/update", upload.array('files'), optimizeSVG, updateUnParsedAttributes);
+
 router.patch("/:id/attributes/delete", deleteAttributes);
 
 

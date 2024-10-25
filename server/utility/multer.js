@@ -9,10 +9,7 @@ const __dirname = path.resolve();
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const desingFolder = req.body.folder;
-        console.log(desingFolder);
-        
         const uploadPath = path.join(__dirname, '..', 'server', 'public', 'uploads', desingFolder);
-        console.log(uploadPath);
 
         // Create the directory synchronously
         try {

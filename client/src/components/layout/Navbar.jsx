@@ -12,13 +12,16 @@ import {
     AlertDialogTrigger,
 } from "../ui/Dialog"
 import { v4 as uuidv4 } from 'uuid';
+import { designTypes, initialSelectedCategories, initialStructure } from '../../constants/constants.jsx';
 
 
 const Navbar = () => {
     const { user, setUser } = useContext(Context);
     const [isAvatarOpen, setIsAvatarOpen] = useState(false);
-    const [designName, setDesignName] = useState("");
     // const [baseFile, setBaseFile] = useState();
+
+    const [selectedDesignType, setSelectedDesignType] = useState("motor");
+    const [designInfo, setDesignInfo] = useState({})
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -121,21 +124,38 @@ const Navbar = () => {
     //         toast.error('Failed to create design.');
     //     }
     // };
+
+    useEffect(() => {
+        const tempDesignInfo = designTypes[selectedDesignType].questions.reduce((acc, question) => {
+            acc[question.name] = question.options[0];
+            return acc;
+        }, {});
+
+        setDesignInfo(tempDesignInfo);
+    }, [selectedDesignType])
+
+    useEffect(() => {
+        console.log(designInfo);
+
+    }, [designInfo])
+
     const createEmptyDesign = async (e) => {
         e.preventDefault();
 
-        
         try {
             const uniqueFolder = await uuidv4();
+
             const { data } = await createEmptyDesignAPI({
-                name: designName,
-                folder: uniqueFolder
+                designType: selectedDesignType,
+                selectedCategory: initialSelectedCategories[selectedDesignType].selectedCategory,
+                designInfo: designInfo,
+                folder: uniqueFolder,
+                structure: initialStructure[selectedDesignType]
             });
-            
+
             if (data.success) {
                 toast.success(data.status);
                 navigate(`/designs/${data.id}`);
-                setDesignName("");
             } else {
                 toast.error(data.status);
             }
@@ -162,16 +182,16 @@ const Navbar = () => {
 
     return (
         <AlertDialog className='rounded-lg col-span-3 overflow-hidded'>
-            <AlertDialogContent className={'bg-actionBar h-auto w-[350px] p-6'}>
+            <AlertDialogContent className={'bg-actionBar h-[80vh] overflow-y-scroll max-w-[700px] min-w-[400px] p-8 pb-20'}>
                 <form onSubmit={createEmptyDesign} className='flex flex-col gap-2'>
-                    <AlertDialogTitle className="text-dark font-medium py-2">Create New Design</AlertDialogTitle>
+                    <AlertDialogTitle className="text-dark font-semibold py-2 text-center pb-4">Create A New Design</AlertDialogTitle>
                     <AlertDialogTrigger className='absolute top-3 right-3 shadow-none'>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                         </svg>
                     </AlertDialogTrigger>
-                    <AlertDialogDescription className='group flex flex-col gap-2 '>
-                        <div className=' flex items-center justify-between gap-2 bg-design/40 py-2.5 focus:bg-design/40 rounded-md px-2'>
+                    <AlertDialogDescription className='group flex flex-col gap-4'>
+                        {/* <div className=' flex items-center justify-between gap-2 bg-design/40 py-2.5 focus:bg-design/40 rounded-md px-2'>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 ml-2 text-dark/60 group-hover:text-dark h-full">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
                             </svg>
@@ -183,7 +203,50 @@ const Navbar = () => {
                                 className="focus:bg-transparent bg-transparent placeholder:text-gray-600 p-2 h-full w-full outline-none mt-0"
                                 placeholder="Enter Title for the design"
                             />
+                        </div> */}
+                        <div>
+                            <label className='text-black text-base font-medium'>Select Type of design</label>
+                            <div className=' flex items-center gap-3 py-2.5 rounded-md px-2'>
+                                {Object.entries(designTypes).map(([key]) => (
+                                    <div
+                                        onClick={() => setSelectedDesignType(key)}
+                                        key={key}
+                                        className={`h-32 w-32 cursor-pointer hover:bg-light/70 hover:scale-105 rounded-2xl flex justify-center items-center text-dark ${key === selectedDesignType ? "border border-dark bg-light" : "border border-dark/20 bg-light/50"}`}
+                                    >
+                                        <span className='font-medium text-lg capitalize text-zinc-600'>{key}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
+
+
+                        <div className='flex gap-4 flex-col'>
+                            {designTypes[selectedDesignType].questions.map((question, indx) => (
+                                <div key={indx}>
+                                    <label className='text-black text-base font-medium'>{question.label}</label>
+                                    <select
+                                        required
+                                        name={question.name}
+                                        value={designInfo?.[question.name]}
+                                        onChange={(e) => {
+                                            setDesignInfo({
+                                                ...designInfo,
+                                                [e.target.name]: e.target.value
+                                            });
+                                        }}
+                                        className="py-3 px-2 font-medium bg-white/80 rounded-md border w-full text-base outline-none text-gray-700 cursor-pointer"
+                                    >
+                                        {question.options.map((option, index) => (
+                                            <option className='text-base text-gray-700 font-medium ' value={option} key={index}>
+                                                {option}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            ))}
+                        </div>
+
+
 
                         {/* <label className='mt-3 py-0 font-medium' htmlFor="frameInput">Frame Sizes</label>
                         <input
@@ -292,7 +355,7 @@ const Navbar = () => {
                     </div>
                 </div>
             </nav>
-        </AlertDialog>
+        </AlertDialog >
     );
 };
 

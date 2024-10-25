@@ -9,10 +9,9 @@ import { handleClick, handleDragOver } from '../../../../../utility/dragDrop'
 import filePath from '../../../../../utility/filePath';
 import AddAttributeForm from './parts/AddAttributeForm';
 
-
 function UpdateForm() {
 
-    const { design, menuOf, designAttributes, setDesignAttributes, setFileVersion, newFiles, setNewFiles, updatedAttributes, setUpdatedAttributes } = useContext(Context);
+    const { design, menuOf, designAttributes, setDesignAttributes, setFileVersion, newFiles, setNewFiles, updatedAttributes, setUpdatedAttributes, generateStructure } = useContext(Context);
     const [updateLoading, setUpdateLoading] = useState(false);
     const [operation, setOperation] = useState("update");
     const [newAttributeName, setNewAttributeName] = useState(menuOf[menuOf.length - 1]);
@@ -25,7 +24,6 @@ function UpdateForm() {
             [title]: e.target.files[0]
         });
     };
-
 
     useEffect(() => {
         const deepCopyValue = JSON.parse(JSON.stringify(designAttributes));
@@ -143,16 +141,17 @@ function UpdateForm() {
 
 
             const renamedAttributes = await renameAttribute(designAttributes, menuOf, newAttributeName);
-            console.log(renamedAttributes);
 
             const updatedDesignAttributes = await updateValue(renamedAttributes);
 
             const formData = new FormData();
 
+            const structure = generateStructure(updatedDesignAttributes)
+
             formData.append('folder', design.folder);
 
             //tempDesignAttributes is a object
-            formData.append('attributes', JSON.stringify(updatedDesignAttributes));
+            formData.append('structure', JSON.stringify(structure));
 
             // Append files to FormData
             for (const [title, file] of Object.entries(newFiles)) {
@@ -220,8 +219,11 @@ function UpdateForm() {
 
     const handleDelete = async () => {
         const updateValueAfterDelete = await deleteValue();
+
+        let structure = generateStructure(updateValueAfterDelete)
+
         const body = {
-            attributes: updateValueAfterDelete,
+            structure: structure,
             filesToDelete: await extractPaths()
         }
 
@@ -242,6 +244,7 @@ function UpdateForm() {
     useEffect(() => {
         console.log(updatedAttributes);
     }, [updatedAttributes])
+
     return (
         <form onSubmit={handleUpdate} className='flex flex-col gap-1 w-[60vw] p-6 pb-0 bg-theme'>
             <AlertDialogTitle className="text-dark/60 font-medium py-2">Update</AlertDialogTitle>
@@ -276,7 +279,9 @@ function UpdateForm() {
                                     required
                                     type="text"
                                     value={newAttributeName}
-                                    onChange={(e) => setNewAttributeName(e.target.value)}
+                                    onChange={(e) => {
+                                        setNewAttributeName(e.target.value)
+                                    }}
                                     className="bg-transparent h-full mt-0 w-full outline-none py-3 px-3"
                                     placeholder="e.g my-design"
                                 />

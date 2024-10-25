@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 function DeleteForm() {
 
-    const { menuOf, designAttributes, setDesignAttributes } = useContext(Context);
+    const { menuOf, designAttributes, setDesignAttributes, generateStructure } = useContext(Context);
     const { id } = useParams();
 
     const tempDesignAttributes = JSON.parse(JSON.stringify(designAttributes));
@@ -49,8 +49,14 @@ function DeleteForm() {
     }
 
     const handleDelete = async () => {
+
+        let attributes = deleteValue()
+        let structure = generateStructure(attributes)
+
+        
+
         const body = {
-            attributes: deleteValue(),
+            structure: structure,
             filesToDelete: extractPaths()
         }
 

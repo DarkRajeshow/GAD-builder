@@ -11,6 +11,7 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
     const { menuOf, newFiles, setNewFiles, setUpdatedAttributes, uniqueFileName, setUniqueFileName } = useContext(Context);
     const [optionName, setOptionName] = useState("");
     const [isParent, setIsParent] = useState(false);
+    const [isAttributeAlreadyExist, setIsAttributeAlreadyExist] = useState(false)
 
     const handleFileChange = (e, title) => {
         setNewFiles({
@@ -49,7 +50,6 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
 
     const handleAdd = () => {
 
-
         if (optionName === "") {
             toast.error("Must add name for customization")
             return;
@@ -62,8 +62,6 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
         setUpdatedAttributes((prev) => {
             const tempAttributes = updateValue(prev);
 
-            console.log(tempAttributes);
-            
             if (nestedIn) {
                 if (menuOf.length === 2) {
                     if (!tempAttributes[menuOf[0]]?.options[menuOf[1]]?.options) {
@@ -115,7 +113,7 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
     }
 
 
-    return (
+    return ( 
         <div id='add' className='w-full'>
             <div className='pl-3 ml-3 border-l-2 border-dark/10 my-2'>
                 {(!nestedIn && menuOf.length === 1) && <>
@@ -152,7 +150,19 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
                                 required
                                 type="text"
                                 value={optionName}
-                                onChange={(e) => setOptionName(e.target.value)}
+                                onChange={(e) => {
+                                    const newOptionName = e.target.value;
+                                    const optionsToCheck = updatedValue?.options;
+
+                                    if (optionsToCheck[newOptionName]) {
+                                        toast.error(`Option name "${newOptionName}" already exists! Please choose a different name.`);
+                                        setIsAttributeAlreadyExist(true)
+                                    }
+                                    else {
+                                        setIsAttributeAlreadyExist(false)
+                                    }
+                                    setOptionName(e.target.value)
+                                }}
                                 className="bg-transparent h-full mt-0 w-full outline-none py-3 px-2"
                                 placeholder="e.g my-design"
                             />
@@ -167,7 +177,7 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
                     </div>
                     <div className='flex items-center justify-end gap-3 text-sm pt-10'>
                         <button type="button" onClick={() => setOperation("")} className={`flex items-center justify-center gap-3 hover:bg-zinc-400/30 py-2 px-3 rounded-md  text-dark font-medium relative bg-design`}>Cancel</button>
-                        <button onClick={handleAdd} className={`flex items-center justify-center gap-3 hover:bg-green-300 py-2 px-3 rounded-md  text-dark font-medium relative bg-green-300/90`}>Add Option</button>
+                        <button disabled={isAttributeAlreadyExist || !optionName} onClick={handleAdd} className={`flex items-center justify-center gap-3 py-2 px-3 rounded-md  text-dark font-medium relative ${(isAttributeAlreadyExist || !optionName) ? 'bg-gray-300' : 'bg-green-300/90 hover:bg-green-300 '}`}>Add Option</button>
                     </div>
                 </div> : <div className='rounded-lg bg-white overflow-hidden py-4 px-4 border-2 border-dark/5'>
                     <div>
@@ -183,7 +193,21 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
                                 required
                                 type="text"
                                 value={optionName}
-                                onChange={(e) => setOptionName(e.target.value)}
+                                onChange={(e) => {
+                                    const newOptionName = e.target.value;
+                                    const optionsToCheck = updatedValue?.options;
+
+                                    if (optionsToCheck[newOptionName]) {
+                                        toast.error(`Option name "${newOptionName}" already exists! Please choose a different name.`);
+                                        setIsAttributeAlreadyExist(true)
+                                    }
+                                    else {
+                                        setIsAttributeAlreadyExist(false)
+                                    }
+
+                                    setOptionName(e.target.value)
+
+                                }}
                                 className="bg-transparent h-full mt-0 w-full outline-none py-3 px-2"
                                 placeholder="e.g my-design"
                             />
@@ -228,7 +252,7 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
                     </div>
                     <div className='flex items-center justify-end gap-3 text-sm pt-10'>
                         <button type="button" onClick={() => setOperation("")} className={`flex items-center justify-center gap-3 hover:bg-zinc-400/30 py-2 px-3 rounded-md  text-dark font-medium relative bg-design`}>Cancel</button>
-                        <button onClick={handleAdd} className={`flex items-center justify-center gap-3 hover:bg-green-300 py-2 px-3 rounded-md  text-dark font-medium relative bg-green-300/90`}>Add Option</button>
+                        <button disabled={isAttributeAlreadyExist || !optionName} onClick={handleAdd} className={`flex items-center justify-center gap-3 py-2 px-3 rounded-md  text-dark font-medium relative  ${(isAttributeAlreadyExist || !optionName) ? 'bg-gray-300' : 'bg-green-300/90 hover:bg-green-300 '}`}>Add Option</button>
                     </div>
                 </div>
                 }

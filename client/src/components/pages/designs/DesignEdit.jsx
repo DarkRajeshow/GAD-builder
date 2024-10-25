@@ -5,6 +5,7 @@ import ActionBar from './parts/ActionBar';
 import View from './parts/View';
 import { svg2pdf } from 'svg2pdf.js';
 import jsPDF from 'jspdf';
+import SideMenu from './parts/SideMenu';
 
 const DesignEdit = () => {
     const { id } = useParams();
@@ -50,7 +51,7 @@ const DesignEdit = () => {
         } else {
             clonedSvgElement.setAttribute(
                 'viewBox',
-                `${(((viewBoxWidth - 520) / 2) + offset.x) * zoom} ${offset.y * zoom} ${520 * zoom} ${window.innerHeight * zoom}`
+                `${(((viewBoxWidth - 520) / 2) + offset.x) * zoom} ${(offset.y) * zoom} ${520 * zoom} ${window.innerHeight * zoom}`
             );
         }
 
@@ -72,8 +73,10 @@ const DesignEdit = () => {
         }
     }, [selectionBox, zoom, offset]);
 
+    
     return (
         <main className="h-screen fixed w-screen">
+            <SideMenu />
             <ActionBar generatePDF={generatePDF} />
             <View generatePDF={generatePDF} zoom={zoom} setZoom={setZoom} offset={offset} setOffset={setOffset} reference={designRef} selectionBox={selectionBox} />
         </main>

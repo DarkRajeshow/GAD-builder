@@ -1,26 +1,3 @@
-
-// const handleSearchChange = (e) => {
-//     const searchValue = e.target.value.toLowerCase();
-//     const tempAttri = Object.keys(model)
-//         .filter(key => key.toLowerCase().includes(searchValue))
-//         .reduce((obj, key) => {
-//             obj[key] = model[key];
-//             return obj;
-//         }, {});
-//     setFilteredAttributes(tempAttri);
-// };
-{/* <div className='group h-[8%] bg-design/20 focus:bg-design/40 rounded-md flex items-center justify-center gap-2 px-4 '>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`size-6 text-dark/60 group-hover:text-dark h-full`}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                </svg>
-                <input
-                    type="text"
-                    onChange={handleSearchChange}
-                    className="focus:bg-transparent bg-transparent py-0 h-full mt-0"
-                    placeholder="Search any element"
-                />
-            </div> */}
-
 import PropTypes from 'prop-types';
 import { v4 as uuidv4 } from 'uuid';
 import { useCallback, useContext, useEffect, useRef, useState, useMemo, memo } from 'react';
@@ -29,7 +6,7 @@ import {
     AlertDialogContent,
     AlertDialogTrigger,
 } from "../../../ui/Dialog"
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Context } from '../../../../context/Context';
 import RenderOptions from './forms/RenderOptions';
 import { LucideEllipsisVertical } from 'lucide-react';
@@ -39,6 +16,9 @@ import RenameForm from './forms/RenameForm';
 import ExportForm from './forms/ExportForm';
 import DeleteForm from './forms/DeleteForm';
 import UpdateForm from './forms/UpdateForm';
+import { popUpQuestions } from '../../../../constants/constants';
+import { shiftToSelectedCategoryAPI } from '../../../../utility/api';
+import { toast } from 'sonner';
 
 
 
@@ -47,6 +27,7 @@ const MemoizedContextMenuOptions = memo(ContextMenuOptions);
 
 function ActionBar({ generatePDF }) {
 
+    const { loading, designAttributes, setDesignAttributes, uniqueFileName, setUniqueFileName, design, fetchProject, selectedCategory } = useContext(Context);
 
     const [openDropdown, setOpenDropdown] = useState(null);
     const [attributeFileName, setAttributeFileName] = useState('');
@@ -57,7 +38,13 @@ function ActionBar({ generatePDF }) {
     const [menuVisible, setMenuVisible] = useState(false);
     const [attributeType, setAttributeType] = useState("normal");
     const [newCustomizationFile, setNewCustomizationFile] = useState();
+    const [infoOpen, setInfoOpen] = useState(false)
+    const [tempSelectedCategory, setTempSelectedCategory] = useState(selectedCategory)
+    const [tempDesignAttributes, setTempDesignAttributes] = useState(designAttributes);
 
+
+
+    const { id } = useParams()
 
     const newAttributeTypes = [
         { value: "normal", Description: "A standard attribute with no nested options." },
@@ -69,9 +56,8 @@ function ActionBar({ generatePDF }) {
 
 
     const contextMenuRef = useRef(null);
+    const infoContext = useRef(null);
 
-    const { loading, designAttributes, setDesignAttributes, uniqueFileName, setUniqueFileName } = useContext(Context);
-    const [tempDesignAttributes, setTempDesignAttributes] = useState(designAttributes);
 
     const handleToggle = useCallback((key) => {
         setDesignAttributes((prevModel) => ({
@@ -100,7 +86,7 @@ function ActionBar({ generatePDF }) {
                     updatedDesignAttributes[levelOneNest] = {
                         ...updatedDesignAttributes[levelOneNest],
                         options: {
-                            ...updatedDesignAttributes[levelOneNest].options,
+                            ...updatedDesignAttributes[levelOneNest]?.options,
                             [newInput]: { path: uniqueFileName }
                         }
                     };
@@ -108,9 +94,9 @@ function ActionBar({ generatePDF }) {
                 break;
             case 'nestedChildLevel2':
                 if (levelOneNest && levelTwoNest) {
-                    const parentOptions = updatedDesignAttributes[levelOneNest].options;
+                    const parentOptions = updatedDesignAttributes[levelOneNest]?.options || {};
                     const nestedLevelOneOption = parentOptions[levelTwoNest];
-                    let nestedLevelTwoOptions = nestedLevelOneOption.options || {};
+                    let nestedLevelTwoOptions = nestedLevelOneOption?.options || {};
 
                     if (nestedLevelTwoOptions[oldAttributeFileName]) {
                         delete nestedLevelTwoOptions[oldAttributeFileName];
@@ -142,7 +128,7 @@ function ActionBar({ generatePDF }) {
                 break;
             case 'nestedParentLevel1':
                 if (levelOneNest) {
-                    let newNestedOptions = updatedDesignAttributes[levelOneNest].options;
+                    let newNestedOptions = updatedDesignAttributes[levelOneNest]?.options || {};
 
                     if (newNestedOptions[oldAttributeFileName]) {
                         delete newNestedOptions[oldAttributeFileName];
@@ -154,7 +140,7 @@ function ActionBar({ generatePDF }) {
                     };
 
                     updatedDesignAttributes[levelOneNest] = {
-                        selectedOption: updatedDesignAttributes[levelOneNest].selectedOption,
+                        selectedOption: updatedDesignAttributes[levelOneNest]?.selectedOption,
                         options: newNestedOptions,
                     };
                 }
@@ -164,10 +150,26 @@ function ActionBar({ generatePDF }) {
         setTempDesignAttributes(updatedDesignAttributes);
     }, [attributeFileName, attributeType, levelOneNest, levelTwoNest, designAttributes, oldAttributeFileName, uniqueFileName]);
 
+
+    useEffect(() => {
+        setTempDesignAttributes(designAttributes)
+    }, [attributeType, designAttributes]);
+
+    // useEffect(() => {
+    //     console.log(tempDesignAttributes);
+    // }, [tempDesignAttributes]);
+
+
     useEffect(() => {
         setLevelOneNest("");
         setLevelTwoNest("");
     }, [attributeType]);
+
+
+    useEffect(() => {
+        setTempSelectedCategory(selectedCategory);
+    }, [selectedCategory]);
+
 
     useEffect(() => {
         handleAttributeFileNameChange();
@@ -195,6 +197,9 @@ function ActionBar({ generatePDF }) {
 
     useEffect(() => {
         const handleClickOutside = (event) => {
+            if (infoContext.current && !infoContext.current.contains(event.target)) {
+                setInfoOpen(false);
+            }
             if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
                 setMenuVisible(false);
             }
@@ -203,6 +208,24 @@ function ActionBar({ generatePDF }) {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+
+    const shiftCategory = async () => {
+        try {
+            const { data } = await shiftToSelectedCategoryAPI(id, {
+                selectedCategory: tempSelectedCategory
+            });
+            if (data.success) {
+                toast.success(data.status);
+                fetchProject(id);
+            } else {
+                toast.error(data.status);
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error('Something went wrong, please try again.');
+        }
+    }
 
     const memoizedDesignAttributes = useMemo(() => {
         return designAttributes && Object.entries(designAttributes).sort(([a], [b]) => a.localeCompare(b)).map(([attribute, value]) => (
@@ -214,6 +237,8 @@ function ActionBar({ generatePDF }) {
                     setOpenDropdown(attribute);
                 }}
             >
+
+                {/* single option */}
                 <div className={`group flex items-center justify-between pl-2 pr-1 gap-1 select-none border border-gray-400/25 rounded-lg ${attribute === "base" ? "cursor-auto !border-dark/50 opacity-40" : "cursor-pointer"} bg-white`}>
                     <label className='flex items-center gap-2 cursor-pointer'>
                         <input
@@ -245,10 +270,12 @@ function ActionBar({ generatePDF }) {
                             {attribute}
                         </span>
                     </label>
+
                     <span onClick={() => handleToggleContextMenu(attribute)} className='hover:bg-dark/5 p-1 rounded-full'>
                         <LucideEllipsisVertical strokeWidth={1.5} className='opacity-0 group-hover:opacity-100 h-4 w-4 flex items-center justify-center' />
                     </span>
                 </div>
+                {/* further nested options */}
                 {openDropdown === attribute && value.options && (
                     <div onMouseLeave={() => setMenuVisible(false)} className="absolute border border-gray-300 rounded-lg mt-1 bg-white z-30 min-w-max py-2">
                         <MemoizedRenderOptions setDialogType={setDialogType} menuVisible={menuVisible} handleToggleContextMenu={handleToggleContextMenu} attribute={attribute} options={value.options} />
@@ -272,8 +299,55 @@ function ActionBar({ generatePDF }) {
                     }
                 }}>
 
-                <div className='w-40'>
-                    <Link to={"/"} className='logo text-lg font-medium text-center text-purple-700'>Flexy Draft</Link>
+                <div className='w-40 flex flex-col items-start gap-1'>
+                    <Link to={"/"}> <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 text-gray-700 hover:text-black hover:scale-105 cursor-pointer">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                    </svg></Link>
+                    <div className='flex items-center gap-1 relative' title='Design info' ref={infoContext}>
+                        <p className='logo font-medium text-center text-purple-700 capitalize'>{design.designType}</p>
+                        <svg onClick={() => setInfoOpen(!infoOpen)} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 text-blue-400 hover:text-blue-600 hover:scale-105 cursor-pointer">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                        </svg>
+
+                        {/* designDetails popup */}
+                        {infoOpen && <div className='absolute text-md top-full left-[90%] z-40 min-w-52 border-2 border-dark/20 rounded-md p-2 bg-[#FFFFFF]'>
+                            <label className='text-sm font-medium'>Design Details</label>
+                            {design?.designInfo && Object.entries(design?.designInfo).map(([key, value]) => (
+                                <span key={key} className='capitalize text-sm font-medium text-gray-600'>{key.replace(/([A-Z])/g, ' $1').trim()} : {value} </span>
+                            ))}
+
+                            <div className='capitalize mt-4 text-sm font-medium'>
+                                <label className='text-sm font-medium'>Change Variety</label>
+
+
+                                {popUpQuestions[design.designType].questions.map((question, index) => (
+                                    <div key={index} className='pb-2 text-sm'>
+                                        <label className='text-gray-600 text-xs pt-1'>{question.label}</label>
+                                        <select
+                                            required
+                                            value={tempSelectedCategory}
+                                            onChange={(e) => {
+                                                setTempSelectedCategory(e.target.value);
+                                            }}
+                                            className="py-1.5 px-1.5 text-xs text-gray-600 bg-white/80 rounded-md border w-full outline-none"
+                                        >
+                                            {question.options.map((option, index) => (
+                                                <option className='hover:bg-white text-xs text-gray-600' value={option.value} key={index}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ))}
+
+                                <button className='text-sm mt-2 font-medium w-full text-center bg-green-200 py-1 rounded-md' onClick={shiftCategory}>Shift</button>
+                            </div>
+                        </div>}
+                    </div>
+
+
+
+
                 </div>
 
                 <AlertDialogContent className={'bg-theme max-h-[80vh] w-auto overflow-y-scroll p-6'}>

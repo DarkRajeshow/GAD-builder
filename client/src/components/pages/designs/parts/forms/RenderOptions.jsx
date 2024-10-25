@@ -20,16 +20,15 @@ const RenderOptions = ({ attribute, options, handleToggleContextMenu, setDialogT
         }));
     };
 
-    const handleSubOptionChange = (option, path) => {
+    const handleSubOptionChange = (option, subOption) => {
         setDesignAttributes((prevModel) => ({
             ...prevModel,
             [attribute]: {
-                ...prevModel[attribute],
                 options: {
                     ...prevModel[attribute].options,
                     [option]: {
                         ...prevModel[attribute].options[option],
-                        selectedOption: path,
+                        selectedOption: subOption,
                     },
                 },
                 selectedOption: option, // Ensure the parent option is also selected
@@ -120,7 +119,8 @@ const RenderOptions = ({ attribute, options, handleToggleContextMenu, setDialogT
                                         <input
                                             type="radio"
                                             checked={subValue.selectedOption === subSubOption}
-                                            onChange={() => handleSubOptionChange(subOption, subSubOption)}
+                                            onClick={() => handleSubOptionChange(subOption, subSubOption)}
+                                            readOnly
                                             hidden
                                         />
                                         <span className={`h-5 w-5 flex items-center justify-center cursor-pointer rounded-full ${(subValue.selectedOption === subSubOption && designAttributes[attribute].selectedOption === subOption) ? "bg-green-300/60" : "bg-design/30"}`}>

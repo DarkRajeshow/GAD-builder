@@ -1,12 +1,12 @@
 import { AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger } from '@radix-ui/react-alert-dialog';
 import PropTypes from 'prop-types';
 import { toast } from 'sonner';
-import { useContext } from 'react';
-import { Context } from '../../../../../context/Context';
 import { addNewAttributeAPI, addNewParentAttributeAPI } from '../../../../../utility/api';
 import { useParams } from 'react-router-dom';
 import RenderNestedOptions from './RenderNestedOptions';
 import { handleClick, handleDragOver, handleDrop } from '../../../../../utility/dragDrop'
+import useStore from '../../../../../store/useStore';
+import { useState } from 'react';
 
 
 const AddForm = ({
@@ -25,8 +25,11 @@ const AddForm = ({
     tempDesignAttributes
 }) => {
 
-    const { loading, design, fetchProject, uniqueFileName, generateStructure } = useContext(Context);
+    const { loading, design, fetchProject, uniqueFileName, generateStructure, setUndoStack, setRedoStack } = useStore()
+
     const { id } = useParams();
+
+    const [addAttributeLoading, setAddAttributeLoading] = useState(false)
 
 
     // Function to handle file selection
@@ -39,7 +42,7 @@ const AddForm = ({
 
         const formData = new FormData();
 
-
+        setAddAttributeLoading(true)
         if (!loading) {
             formData.append('folder', design.folder);
             formData.append('title', uniqueFileName);
@@ -68,6 +71,8 @@ const AddForm = ({
             toast.error('Failed to add a customization attribute.');
         }
 
+        setAddAttributeLoading(false)
+
         document.getElementById("closeButton").click();
     };
 
@@ -75,6 +80,7 @@ const AddForm = ({
     // Function to submit the form and create a new design
     const addNewParentAttribute = async () => {
         let structure = generateStructure(tempDesignAttributes)
+        setAddAttributeLoading(true)
 
         try {
             const { data } = await addNewParentAttributeAPI(id, structure);
@@ -90,24 +96,28 @@ const AddForm = ({
             console.log(error);
             toast.error('Failed to add parent attribute.');
         }
+        setAddAttributeLoading(false)
+
         document.getElementById("closeButton").click();
+
     };
 
     return (
         <form onSubmit={(e) => {
             e.preventDefault();
-
-            if (attributeType !== "nestedParentLevel0" && attributeType !== "nestedParentLevel1") {
+            setUndoStack([]);
+            setRedoStack([]);
+            if (attributeType === "nestedParentLevel0" || attributeType === "nestedParentLevel1") {
+                addNewParentAttribute()
+            }
+            else {
                 if (!newCustomizationFile) {
-                    toast.error("SVG File is mandatory.");
+                    toast.error("SVG/PDF File is mandatory.");
                     return;
                 }
                 addNewAttribute();
             }
-            else {
-                addNewParentAttribute()
-            }
-        }} className='flex flex-col gap-2'
+        }} className='flex flex-col gap-2 min-w-[715px]'
         >
             <AlertDialogTitle className="text-dark font-medium py-2">Add New Customization Option</AlertDialogTitle>
             <AlertDialogTrigger id='closeButton' className='absolute top-3 right-3 shadow-none'>
@@ -209,34 +219,68 @@ const AddForm = ({
                     </div>
                 )}
 
-                {(attributeType !== "nestedParentLevel0" && attributeType !== "nestedParentLevel1") ? <div className='flex flex-col gap-2'>
-                    <div className='font-medium mt-4'>Upload SVG Customization file. <span className='text-red-500'>*</span> </div>
-                    {newCustomizationFile && <div className='px-4 py-2 rounded-lg bg-blue-200'>
-                        <div>Selected file : <span className='font-medium text-red-800'>{newCustomizationFile.name}</span> </div>
-                    </div>}
 
-                    <input
-                        id='customization'
-                        type="file"
-                        multiple
-                        accept='image/svg+xml'
-                        onChange={(e) => handleFileChange(e)}
-                        className="hidden"
-                    />
+                {newCustomizationFile && <div className='px-4 py-2 rounded-lg bg-blue-200 flex items-center justify-between'>
+                    <p>Selected file : <span className='font-medium text-red-800'>{newCustomizationFile.name}</span> </p>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 hover:text-red-700 cursor-pointer" onClick={() => setNewCustomizationFile()}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </div>}
 
-                    <div
-                        onClick={() => handleClick('customization')}
-                        onDrop={(e) => { handleDrop(e, setNewCustomizationFile) }}
-                        onDragOver={handleDragOver}
-                        className="w-full p-4 border border-dashed border-gray-400 rounded-2xl cursor-pointer flex items-center justify-center min-h-72"
-                    >
-                        <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in SVG format.</span>
+                {(attributeType !== "nestedParentLevel0" && attributeType !== "nestedParentLevel1") ? <div className='grid grid-cols-2 gap-4 pt-5'>
+                    <div className='flex flex-col gap-2'>
+                        <p className="font-medium text-gray-600">Change File</p>
+                        <input
+                            id='customization'
+                            type="file"
+                            multiple
+                            accept='.svg,.pdf'
+                            onChange={(e) => handleFileChange(e)}
+                            className="hidden"
+                        />
+
+                        <div
+                            onClick={() => handleClick('customization')}
+                            onDrop={(e) => { handleDrop(e, setNewCustomizationFile) }}
+                            onDragOver={handleDragOver}
+                            className="w-full aspect-square p-4 border-2 border-dashed border-gray-400 cursor-pointer flex items-center justify-center min-h-72"
+                        >
+                            <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in SVG format.</span>
+                        </div>
                     </div>
+
+
+                    {(
+                        <div className=" flex gap-2 flex-col">
+                            <p className="font-medium text-gray-600">File Preview</p>
+                            {/* <div className='font-medium'>{selectedFile ? "Preview" : "Current file"}</div> */}
+                            <div className='aspect-square p-5 bg-design/5 border-2 border-dark/5 border-gray-400 w-full overflow-hidden items-center justify-center flex flex-col'>
+
+                                {
+                                    newCustomizationFile ? (newCustomizationFile?.type === "application/pdf" ? (
+                                        <embed src={URL.createObjectURL(newCustomizationFile)} type="application/pdf" width="100%" height="500px" />
+                                    ) : (
+                                        <img
+                                            src={URL.createObjectURL(newCustomizationFile)}
+                                            alt={"base drawing"}
+                                            className="w-full rounded-xl"
+                                        />
+                                    )) : (
+                                        <p>Upload pdf or svg file to preview</p>
+                                    )
+                                }
+
+                            </div>
+                        </div>
+                    )}
                 </div> : <div>
                     <span>* No need for any file uploads, add the options inside this attribute.</span>
                 </div>}
             </div>
-            <button type='submit' className='bg-green-200 hover:bg-green-300 py-2 px-3 rounded-full text-dark font-medium mt-4'>Create</button>
+            <button type='submit' className='bg-green-200 hover:bg-green-300 py-2 px-3 rounded-full text-dark font-medium mt-4 relative flex items-center justify-center'>
+                <div>{addAttributeLoading ? "Creating...": "Create"}</div>
+                {addAttributeLoading && <div className='absolute right-4  h-4 w-4 rounded-full border-r-transparent border-2 border-black animate-spin' />}
+            </button>
         </form>)
 };
 

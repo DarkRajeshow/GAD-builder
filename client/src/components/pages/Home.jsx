@@ -1,10 +1,10 @@
-import { useContext, useEffect } from "react"
-import { Context } from "../../context/Context";
+import { useEffect } from "react"
 import DesignCard from "../parts/DesignCard";
+import useStore from "../../store/useStore";
 
 function Home() {
 
-  const { fetchRecentDesigns, recentDesigns, fetchAllDesignsLoading } = useContext(Context);
+  const { fetchRecentDesigns, recentDesigns, fetchAllDesignsLoading } = useStore()
 
   useEffect(() => {
 

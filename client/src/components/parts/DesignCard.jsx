@@ -1,12 +1,11 @@
-import { useContext } from "react";
-import { Context } from "../../context/Context";
 import filePath from "../../utility/filePath";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
+import useStore from "../../store/useStore";
 
 function DesignCard({ design }) {
 
-    const { RecentDesignLoading, fileVersion } = useContext(Context);
+    const { RecentDesignLoading, fileVersion } = useStore();
 
     const getSVGPath = (value) => {
         if (typeof value !== 'object') return null;
@@ -14,7 +13,7 @@ function DesignCard({ design }) {
         const baseFilePath = `${filePath}${design.folder}`;
 
         if (value.value && value.path) {
-            return `${baseFilePath}/${value.path}`;
+            return `${baseFilePath}/${value.path}.svg`;
         }
 
         if (value.selectedOption === 'none') {
@@ -25,11 +24,11 @@ function DesignCard({ design }) {
         const subSubOption = value.options && value?.options[subOption]?.selectedOption;
 
         if (subSubOption && subSubOption !== " ") {
-            return `${baseFilePath}/${value?.options[subOption]?.options[subSubOption]?.path}`;
+            return `${baseFilePath}/${value?.options[subOption]?.options[subSubOption]?.path}.svg`;
         }
 
         if (subOption && value?.options[subOption]?.path) {
-            return `${baseFilePath}/${value.options[subOption]?.path}`;
+            return `${baseFilePath}/${value.options[subOption]?.path}.svg`;
         }
         return null;
     };
@@ -60,7 +59,7 @@ function DesignCard({ design }) {
                                 y="0"
                                 width="520"
                                 height="520"
-                                href={`${filePath}${design.folder}/${customizationOptions?.baseDrawing?.path}?v=${fileVersion}`}
+                                href={`${filePath}${design.folder}/${customizationOptions?.baseDrawing?.path}.svg?v=${fileVersion}`}
                             />
                         )}
 

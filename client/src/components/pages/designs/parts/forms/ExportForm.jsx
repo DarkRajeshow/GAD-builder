@@ -1,13 +1,13 @@
 import { AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger } from '../../../../ui/Dialog';
 import PropTypes from 'prop-types';
-import {  useContext, useState } from 'react';
-import { Context } from '../../../../../context/Context';
+import { useState } from 'react';
+import useStore from '../../../../../store/useStore';
 
 
 function ExportForm({ generatePDF }) {
 
     const [fileName, setFileName] = useState("");
-    const {setSelectionBox} = useContext(Context);
+    const { setSelectionBox } = useStore()
 
     return (
         <form onSubmit={(e) => {

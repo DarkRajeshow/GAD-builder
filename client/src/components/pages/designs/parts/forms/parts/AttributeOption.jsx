@@ -1,17 +1,17 @@
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'sonner';
 import { handleDragOver } from '../../../../../../utility/dragDrop';
 import filePath from '../../../../../../utility/filePath';
-import { Context } from '../../../../../../context/Context';
 import AddAttributeForm from './AddAttributeForm';
+import useStore from '../../../../../../store/useStore';
 
 function AttributeOption({ parentOption = "", nestedIn = "", setUpdatedValue, updatedValue, option, value }) {
     const [renamedOption, setRenamedOption] = useState(option);
 
     const [operation, setOperation] = useState("");
 
-    const { design, newFiles, setNewFiles } = useContext(Context);
+    const { design, newFiles, setNewFiles } = useStore();
 
     const handleFileChange = (e, title) => {
         setNewFiles({
@@ -22,7 +22,7 @@ function AttributeOption({ parentOption = "", nestedIn = "", setUpdatedValue, up
 
     const handleDrop = (e, title) => {
         e.preventDefault();
-        if (e.dataTransfer.files[0].type === 'image/svg+xml') {
+        if (e.dataTransfer.files[0].type === 'image/svg+xml' || e.dataTransfer.files[0].type === 'application/pdf') {
             setNewFiles({
                 ...newFiles,
                 [title]: e.dataTransfer.files[0]
@@ -148,34 +148,44 @@ function AttributeOption({ parentOption = "", nestedIn = "", setUpdatedValue, up
                                 {(value?.path && option !== "none") && <div className='flex gap-2 w-full h-full items-center justify-between px-2 pt-8'>
                                     <div className='blur-none w-full'>
                                         <p className='pb-3 font-medium text-lg'>Change File</p>
-                                        <div className='grid grid-cols-2 gap-4'>
+                                       
+                                        <div className='grid grid-cols-2 gap-4 pt-5'>
                                             <div className='flex flex-col gap-2'>
+                                                <p className="font-medium text-gray-600">Upload File</p>
                                                 <input
                                                     id={option}
                                                     type="file"
                                                     multiple
-                                                    accept='image/svg+xml'
-                                                    onChange={(e) => handleFileChange(e, value.path)}
+                                                    accept='.svg,.pdf'
+                                                    onChange={(e) => handleFileChange(e, value?.path)}
                                                     className="hidden"
                                                 />
 
                                                 <div
                                                     onClick={() => document.getElementById(option).click()}
-                                                    onDrop={(e) => { handleDrop(e, value.path) }}
+                                                    onDrop={(e) => { handleDrop(e, value?.path) }}
                                                     onDragOver={handleDragOver}
                                                     className="w-full aspect-square p-4 border-2 border-dashed border-gray-400 cursor-pointer flex items-center justify-center min-h-72"
                                                 >
-                                                    <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in SVG format.</span>
+                                                    <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in PDF/SVG format.</span>
                                                 </div>
                                             </div>
+
+
                                             {(
                                                 <div className=" flex gap-2 flex-col">
+                                                    <p className="font-medium text-gray-600">File Preview</p>
                                                     <div className='aspect-square p-5 bg-design/5 border-2 border-dark/5 border-gray-400 w-full overflow-hidden items-center justify-center flex flex-col'>
-                                                        <img
-                                                            src={selectedFile ? URL.createObjectURL(selectedFile) : `${baseFilePath}/${value.path}`}
-                                                            alt={selectedFile ? selectedFile.name : value.path}
-                                                            className="w-full rounded-xl"
-                                                        />
+
+                                                        {(selectedFile?.type === "application/pdf") ? (
+                                                            <embed src={URL.createObjectURL(selectedFile)} type="application/pdf" width="100%" height="500px" />
+                                                        ) : (
+                                                            <img
+                                                                src={selectedFile ? URL.createObjectURL(selectedFile) : `${baseFilePath}/${value.path}.svg`}
+                                                                alt={selectedFile ? selectedFile.name : value.path}
+                                                                className="w-full rounded-xl"
+                                                            />
+                                                        )}
                                                     </div>
                                                 </div>
                                             )}

@@ -1,15 +1,15 @@
-import { useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Context } from '../../../context/Context';
 import ActionBar from './parts/ActionBar';
 import View from './parts/View';
 import { svg2pdf } from 'svg2pdf.js';
 import jsPDF from 'jspdf';
 import SideMenu from './parts/SideMenu';
+import useStore from '../../../store/useStore';
 
 const DesignEdit = () => {
     const { id } = useParams();
-    const { fetchProject, selectionBox } = useContext(Context);
+    const { fetchProject, selectionBox } = useStore();
     const designRef = useRef();
     const [zoom, setZoom] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -65,15 +65,18 @@ const DesignEdit = () => {
         const x = (pdfWidth - renderWidth) / 2;
         const y = (pdfHeight - renderHeight) / 2;
 
+        console.log(clonedSvgElement);
+
+
         try {
-            await svg2pdf(clonedSvgElement, pdf, { x, y, width: renderWidth, height: renderHeight });
+            await svg2pdf(clonedSvgElement, pdf, { x, y, width: renderWidth, height: renderHeight});
             pdf.save(`${fileName}.pdf`);
         } catch (error) {
             console.error('Error generating PDF:', error);
         }
     }, [selectionBox, zoom, offset]);
 
-    
+
     return (
         <main className="h-screen fixed w-screen">
             <SideMenu />

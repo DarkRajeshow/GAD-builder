@@ -1,40 +1,47 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { Context } from "../../../../../context/Context";
+import { useEffect, useRef, useState } from "react";
 import PropTypes from 'prop-types'
 import { LucideEllipsisVertical } from "lucide-react";
 import ContextMenuOptions from "./ContextMenuOptions";
+import useStore from "../../../../../store/useStore";
 
-const RenderOptions = ({ attribute, options, handleToggleContextMenu, setDialogType, menuVisible }) => {
-    const { designAttributes, setDesignAttributes } = useContext(Context);
+
+const RenderOptions = ({ pushToUndoStack, attribute, options, handleToggleContextMenu, setDialogType, menuVisible }) => {
+    const { designAttributes, updateSelectedSubOption, updateSelectedOption } = useStore();
     const [openSubSubOptions, setOpenSubSubOptions] = useState([]);
     const [scrollPosition, setScrollPosition] = useState(0);
     const divRef = useRef(null);
 
     const handleOptionChange = (option) => {
-        setDesignAttributes((prevModel) => ({
-            ...prevModel,
-            [attribute]: {
-                ...prevModel[attribute],
-                selectedOption: option,
-            },
-        }));
+        pushToUndoStack(); // Push the current state before the change
+        updateSelectedOption(attribute, option)
+        // setDesignAttributes((prevModel) => ({
+        //     ...prevModel,
+        //     [attribute]: {
+        //         ...prevModel[attribute],
+        //         selectedOption: option,
+        //     },
+        // }));
+
     };
 
     const handleSubOptionChange = (option, subOption) => {
-        setDesignAttributes((prevModel) => ({
-            ...prevModel,
-            [attribute]: {
-                options: {
-                    ...prevModel[attribute].options,
-                    [option]: {
-                        ...prevModel[attribute].options[option],
-                        selectedOption: subOption,
-                    },
-                },
-                selectedOption: option, // Ensure the parent option is also selected
-            },
-        }));
+        pushToUndoStack(); // Push the current state before the change
+        updateSelectedSubOption(attribute, option, subOption)
+        // setDesignAttributes((prevModel) => ({
+        //     ...prevModel,
+        //     [attribute]: {
+        //         options: {
+        //             ...prevModel[attribute].options,
+        //             [option]: {
+        //                 ...prevModel[attribute].options[option],
+        //                 selectedOption: subOption,
+        //             },
+        //         },
+        //         selectedOption: option, // Ensure the parent option is also selected
+        //     },
+        // }));
     };
+
 
     const handleToggleSubOptions = (subOption, subValue) => {
         if (subValue?.options) {
@@ -156,6 +163,7 @@ const RenderOptions = ({ attribute, options, handleToggleContextMenu, setDialogT
 };
 
 RenderOptions.propTypes = {
+    pushToUndoStack: PropTypes.func.isRequired,
     attribute: PropTypes.string.isRequired,
     menuVisible: PropTypes.oneOfType([
         PropTypes.string,

@@ -1,6 +1,5 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger } from '../../../../ui/Dialog';
-import { Context } from '../../../../../context/Context';
 import { useParams } from 'react-router-dom';
 import AttributeOption from './parts/AttributeOption';
 import { updateDesignAttributes, deleteDesignAttributes } from '../../../../../utility/api';
@@ -8,10 +7,11 @@ import { toast } from 'sonner';
 import { handleClick, handleDragOver } from '../../../../../utility/dragDrop'
 import filePath from '../../../../../utility/filePath';
 import AddAttributeForm from './parts/AddAttributeForm';
+import useStore from '../../../../../store/useStore';
 
 function UpdateForm() {
 
-    const { design, menuOf, designAttributes, setDesignAttributes, setFileVersion, newFiles, setNewFiles, updatedAttributes, setUpdatedAttributes, generateStructure } = useContext(Context);
+    const { design, menuOf, designAttributes, setDesignAttributes, incrementFileVersion, newFiles, setNewFiles, updatedAttributes, setUpdatedAttributes, generateStructure, setUndoStack, setRedoStack } = useStore();
     const [updateLoading, setUpdateLoading] = useState(false);
     const [operation, setOperation] = useState("update");
     const [newAttributeName, setNewAttributeName] = useState(menuOf[menuOf.length - 1]);
@@ -19,10 +19,17 @@ function UpdateForm() {
     const [selectedAttributeValue, setSelectedAttributeValue] = useState({})
 
     const handleFileChange = (e, title) => {
-        setNewFiles({
-            ...newFiles,
-            [title]: e.target.files[0]
-        });
+        if (e.target.files[0].type === 'image/svg+xml' || e.target.files[0].type === 'application/pdf') {
+            setNewFiles({
+                ...newFiles,
+                [title]: e.target.files[0]
+            });
+        }
+        else {
+            toast.error('Please choose a svg file.');
+        }
+        console.log(newFiles);
+
     };
 
     useEffect(() => {
@@ -54,7 +61,7 @@ function UpdateForm() {
             delete tempAttributes[menuOf[0]].options[menuOf[1]].options[menuOf[menuOf.length - 1]];
         } else if (menuOf.length === 2) {
             if (tempAttributes[menuOf[0]].selectedOption === menuOf[menuOf.length - 1]) {
-                tempAttributes[menuOf[0]].selectedOption = " "
+                tempAttributes[menuOf[0]].selectedOption = "none"
             }
             delete tempAttributes[menuOf[0]].options[menuOf[menuOf.length - 1]];
         } else if (menuOf.length === 1) {
@@ -96,6 +103,8 @@ function UpdateForm() {
         if (!newAttributeName.trim()) return;
 
         try {
+            setUndoStack([]);
+            setRedoStack([])
             const renameAttribute = async (attributes, keys, newKey) => {
                 if (keys[keys.length - 1] === newKey) {
                     return attributes; // Return early if newKey is the same as the last key
@@ -155,7 +164,7 @@ function UpdateForm() {
 
             // Append files to FormData
             for (const [title, file] of Object.entries(newFiles)) {
-                formData.append('files', file, title);
+                formData.append('files', file, title + file.name.slice(file.name.length - 4));
             }
 
             const { data } = await updateDesignAttributes(id, formData);
@@ -165,7 +174,7 @@ function UpdateForm() {
                 toast.success(data.status);
                 document.querySelector("#close").click();
                 setNewFiles({});
-                setFileVersion((version) => version + 1)
+                incrementFileVersion()
             }
             else {
                 toast.error(data.status);
@@ -199,12 +208,13 @@ function UpdateForm() {
 
     const handleDrop = (e, title) => {
         e.preventDefault();
-        if (e.dataTransfer.files[0].type === 'image/svg+xml') {
+        if (e.dataTransfer.files[0].type === 'image/svg+xml' || e.dataTransfer.files[0].type === 'application/pdf') {
             setNewFiles({
                 ...newFiles,
                 [title]: e.target.files[0]
             });
-        } else {
+        }
+        else {
             toast.error('Please choose a svg file.');
         }
     };
@@ -233,17 +243,17 @@ function UpdateForm() {
             setDesignAttributes(updateValueAfterDelete);
             toast.success(data.status);
             document.querySelector("#close").click();
-            setFileVersion((version) => version + 1)
+            incrementFileVersion((version) => version + 1)
         }
         else {
             toast.error(data.status);
         }
     }
 
-
     useEffect(() => {
-        console.log(updatedAttributes);
-    }, [updatedAttributes])
+        console.log(newFiles);
+    }, [newFiles])
+
 
     return (
         <form onSubmit={handleUpdate} className='flex flex-col gap-1 w-[60vw] p-6 pb-0 bg-theme'>
@@ -287,39 +297,46 @@ function UpdateForm() {
                                 />
                             </div>
                         </div>
-                        {selectedAttributeValue?.path && <div className='flex gap-2 w-full h-full items-center justify-between px-2 pt-8'>
-                            <div className='blur-none'>
+                        {selectedAttributeValue?.path && <div className='flex gap-2 w-[100%] h-full items-center justify-between px-2 pt-8'>
+                            <div className='blur-none w-full'>
                                 <p className='pb-3 font-medium text-lg'>Change File</p>
-                                <div className='grid grid-cols-2 gap-4'>
+
+                                <div className='grid grid-cols-2 gap-4 pt-5'>
                                     <div className='flex flex-col gap-2'>
-                                        {/* <div className='font-medium'>Upload to change file</div> */}
+                                        <p className="font-medium text-gray-600">Upload File</p>
                                         <input
                                             id='customization'
                                             type="file"
                                             multiple
-                                            accept='image/svg+xml'
-                                            onChange={(e) => handleFileChange(e, selectedAttributeValue.path)}
+                                            accept='.svg,.pdf'
+                                            onChange={(e) => handleFileChange(e, selectedAttributeValue?.path)}
                                             className="hidden"
                                         />
 
                                         <div
                                             onClick={() => handleClick('customization')}
-                                            onDrop={(e) => { handleDrop(e, selectedAttributeValue.path) }}
+                                            onDrop={(e) => { handleDrop(e, selectedAttributeValue?.path) }}
                                             onDragOver={handleDragOver}
                                             className="w-full aspect-square p-4 border-2 border-dashed border-gray-400 cursor-pointer flex items-center justify-center min-h-72"
                                         >
-                                            <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in SVG format.</span>
+                                            <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in PDF/SVG format.</span>
                                         </div>
                                     </div>
+
+
                                     {(
                                         <div className=" flex gap-2 flex-col">
-                                            {/* <div className='font-medium'>{selectedFile ? "Preview" : "Current file"}</div> */}
+                                            <p className="font-medium text-gray-600">File Preview</p>
                                             <div className='aspect-square p-5 bg-design/5 border-2 border-dark/5 border-gray-400 w-full overflow-hidden items-center justify-center flex flex-col'>
-                                                <img
-                                                    src={selectedFile ? URL.createObjectURL(selectedFile) : `${baseFilePath}/${selectedAttributeValue.path}`}
-                                                    alt={selectedFile ? selectedFile.name : selectedAttributeValue.path}
-                                                    className="w-full rounded-xl"
-                                                />
+
+                                                {(selectedFile?.type === "application/pdf") ? (
+                                                    <embed src={URL.createObjectURL(selectedFile)} type="application/pdf" width="100%" height="500px" />
+                                                ) : (
+                                                    <img
+                                                        src={selectedFile ? URL.createObjectURL(selectedFile) : `${baseFilePath}/${selectedAttributeValue.path}.svg`}
+                                                        className="w-full rounded-xl"
+                                                    />
+                                                )}
                                             </div>
                                         </div>
                                     )}
@@ -371,7 +388,12 @@ function UpdateForm() {
                     setNewFiles({})
                 }} type='button' disabled={updateLoading} className='flex items-center justify-center gap-3 bg-green-200 hover:bg-green-300 py-2 px-3 rounded-md  text-dark font-medium relative'>Reset</button>
                 <div className='flex items-center justify-end gap-3'>
-                    <AlertDialogTrigger disabled={updateLoading} className={`flex items-center justify-center gap-3 hover:bg-zinc-400/30 py-2 px-3 rounded-md  text-dark font-medium relative bg-design`}>Cancel </AlertDialogTrigger>
+                    <button type='button' onClick={() => {
+                        setNewFiles({})
+                        setUpdatedValue(selectedAttributeValue);
+                        setNewAttributeName(menuOf[menuOf.length - 1]);
+                        document.getElementById('close').click()
+                    }} disabled={updateLoading} className={`flex items-center justify-center gap-3 hover:bg-zinc-400/30 py-2 px-3 rounded-md  text-dark font-medium relative bg-design`}>Cancel </button>
                     <button disabled={updateLoading} type='submit' className={`flex items-center justify-center gap-3 hover:bg-[#6B26DB] py-2 px-3 rounded-md  text-white font-medium relative ${updateLoading ? " bg-[#6B26DB]/90/60 hover:bg-blue-300/60" : "bg-[#6B26DB]/90"}`}>Save Changes
                         {
                             updateLoading && <div className='absolute right-4 h-4 w-4 rounded-full bg-transparent border-t-transparent border-[2px] border-green-900 animate-spin' />

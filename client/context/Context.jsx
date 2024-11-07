@@ -8,23 +8,26 @@ import { useEffect } from 'react';
 export const Context = createContext();
 
 export const ContextProvider = ({ children }) => {
-    const [fileName, setFileName] = useState('');
+    const [fileName, setFileName] = useState(''); //1
     const [user, setUser] = useState({})
     const [design, setDesign] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [designAttributes, setDesignAttributes] = useState({});
-    const [RecentDesignLoading, setRecentDesignLoading] = useState(false);
-    const [recentDesigns, setRecentDesigns] = useState([]);
+    const [designAttributes, setDesignAttributes] = useState({}); //y
+    const [RecentDesignLoading, setRecentDesignLoading] = useState(false); // 2
+    const [recentDesigns, setRecentDesigns] = useState([]); // 2
     const [menuOf, setMenuOf] = useState([]);
     const [selectionBox, setSelectionBox] = useState(null);
     const [fileVersion, setFileVersion] = useState(1)
     const [operations, setOperations] = useState({});
     const [newFiles, setNewFiles] = useState({});
     const [updatedAttributes, setUpdatedAttributes] = useState({});
-    const [uniqueFileName, setUniqueFileName] = useState(`${uuidv4()}.svg`)
+    const [uniqueFileName, setUniqueFileName] = useState(uuidv4())
     const [updatedValue, setUpdatedValue] = useState({ value: {}, version: 0 });
-    const [selectedCategory, setSelectedCategory] = useState("")
+    const [selectedCategory, setSelectedCategory] = useState("") // 2
     const [baseDrawing, setBaseDrawing] = useState(" ")
+    const [undoStack, setUndoStack] = useState([]);
+    const [redoStack, setRedoStack] = useState([]);
+
 
     const fetchProject = useCallback(async (id) => {
         try {
@@ -88,14 +91,12 @@ export const ContextProvider = ({ children }) => {
             structure.sizes[category].baseDrawing = baseDrawingObj
         }
 
-        
-
         return structure
     }
 
     useEffect(() => {
         console.log(design);
-        
+
         if (design.designType === "motor") {
             setDesignAttributes(design?.structure?.mountingTypes[selectedCategory]?.attributes ? design.structure.mountingTypes[selectedCategory].attributes : {})
             setBaseDrawing(design?.structure?.mountingTypes[selectedCategory]?.baseDrawing)
@@ -110,6 +111,10 @@ export const ContextProvider = ({ children }) => {
 
     return (
         <Context.Provider value={{
+            undoStack,
+            redoStack,
+            setUndoStack,
+            setRedoStack,
             fileName,
             setFileName,
             user,
@@ -148,11 +153,6 @@ export const ContextProvider = ({ children }) => {
             fetchRecentDesigns,
             baseDrawing,
             setBaseDrawing,
-
-
-
-
-
             generateStructure
         }}>
             {children}

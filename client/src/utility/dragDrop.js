@@ -1,10 +1,10 @@
 // dragDrop.js
 import { toast } from "sonner";
 
-export const handleDrop = (e, setFiles) => {
+export const handleDrop = (e, setFile) => {
     e.preventDefault();
-    if (e.dataTransfer.files[0].type === 'image/svg+xml') {
-        setFiles(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files[0].type === 'image/svg+xml' || e.dataTransfer.files[0].type === 'application/pdf') {
+        setFile(e.dataTransfer.files[0]);
     } else {
         toast.error('Please choose a svg file.');
     }

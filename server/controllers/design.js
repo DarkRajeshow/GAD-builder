@@ -106,7 +106,7 @@ export const addNewAttribute = async (req, res, next) => {
         });
     } catch (error) {
         console.error(error);
-        return res.json({ success: false, status: 'Problem in file upload.' });
+        return res.json({ success: false, status: 'Problem in file ' });
     }
 };
 
@@ -319,7 +319,7 @@ export const deleteAttributes = async (req, res) => {
             if (filesToDelete && filesToDelete.length > 0) {
                 const deletePromises = filesToDelete.map((fileName) => {
                     return new Promise((resolve) => {
-                        const filePath = path.join(folderPath, fileName);
+                        const filePath = path.join(folderPath, fileName + '.svg');
                         fs.unlink(filePath, (err) => {
                             if (err) {
                                 if (err.code === 'ENOENT') {
@@ -388,7 +388,7 @@ export const updateUnParsedAttributes = async (req, res) => {
 
         design.structure = parsedStructure;
         await design.save();
-
+        
 
         res.json({
             success: true,

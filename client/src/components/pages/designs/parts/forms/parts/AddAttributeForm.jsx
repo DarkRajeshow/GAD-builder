@@ -1,33 +1,38 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Context } from "../../../../../../context/Context";
-import { handleDragOver } from "../../../../../../utility/dragDrop";
+import { handleClick, handleDragOver } from "../../../../../../utility/dragDrop";
 import PropTypes from 'prop-types';
-import { v4 as uuidv4 } from 'uuid';
+import useStore from "../../../../../../store/useStore";
 
 
 function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
 
-    const { menuOf, newFiles, setNewFiles, setUpdatedAttributes, uniqueFileName, setUniqueFileName } = useContext(Context);
+    const { menuOf, newFiles, setNewFiles, setUpdatedAttributes, updatedAttributes, uniqueFileName, setUniqueFileName } = useStore();
     const [optionName, setOptionName] = useState("");
     const [isParent, setIsParent] = useState(false);
     const [isAttributeAlreadyExist, setIsAttributeAlreadyExist] = useState(false)
 
     const handleFileChange = (e, title) => {
-        setNewFiles({
-            ...newFiles,
-            [title]: e.target.files[0]
-        });
+        if (e.target.files[0].type === 'image/svg+xml' || e.target.files[0].type === 'application/pdf') {
+            setNewFiles({
+                ...newFiles,
+                [title]: e.target.files[0]
+            });
+        }
+        else {
+            toast.error('Please choose a svg file.');
+        }
     };
 
     const handleDrop = (e, title) => {
         e.preventDefault();
-        if (e.dataTransfer.files[0].type === 'image/svg+xml') {
+        if (e.dataTransfer.files[0].type === 'image/svg+xml' || e.dataTransfer.files[0].type === 'application/pdf') {
             setNewFiles({
                 ...newFiles,
-                [title]: e.dataTransfer.files[0]
+                [title]: e.target.files[0]
             });
-        } else {
+        }
+        else {
             toast.error('Please choose a svg file.');
         }
     };
@@ -59,8 +64,9 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
             return;
         }
 
-        setUpdatedAttributes((prev) => {
-            const tempAttributes = updateValue(prev);
+
+        const tempAttributes = updateValue(updatedAttributes);
+        const tempUpdateFunc = () => {
 
             if (nestedIn) {
                 if (menuOf.length === 2) {
@@ -107,13 +113,22 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
             }
 
             return tempAttributes;
-        })
-        setUniqueFileName(`${uuidv4()}.svg`)
+        }
+        const TempUpdatedAttributes = tempUpdateFunc()
+
+        setUpdatedAttributes(TempUpdatedAttributes)
+        setUniqueFileName()
         setOperation("");
     }
 
 
-    return ( 
+
+    useState(() => {
+        console.log(uniqueFileName);
+        console.log(newFiles);
+    }, [newFiles])
+
+    return (
         <div id='add' className='w-full'>
             <div className='pl-3 ml-3 border-l-2 border-dark/10 my-2'>
                 {(!nestedIn && menuOf.length === 1) && <>
@@ -213,10 +228,16 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
                             />
                         </div>
                     </div>
+
+
+
+
+
+
                     <div className='flex gap-2 w-full h-full items-center justify-between px-2 pt-8'>
                         <div className='w-full'>
                             <p className='pb-3 font-medium text-lg'>Upload File</p>
-                            <div className='grid grid-cols-2 gap-4'>
+                            {/* <div className='grid grid-cols-2 gap-4'>
                                 <div className='flex flex-col gap-2 '>
                                     <input
                                         id={"optionName"}
@@ -247,11 +268,64 @@ function AddAttributeForm({ nestedIn = "", setOperation, updatedValue }) {
                                         </div>
                                     </div>
                                 )}
+                            </div> */}
+
+                            <div className='grid grid-cols-2 gap-4 pt-5'>
+                                <div className='flex flex-col gap-2'>
+                                    <p className="font-medium text-gray-600">Upload File</p>
+                                    <input
+                                        id='customization'
+                                        type="file"
+                                        multiple
+                                        accept='.svg,.pdf'
+                                        onChange={(e) => handleFileChange(e, uniqueFileName)}
+                                        className="hidden"
+                                    />
+
+                                    <div
+                                        onClick={() => handleClick('customization')}
+                                        onDrop={(e) => { handleDrop(e, uniqueFileName) }}
+                                        onDragOver={handleDragOver}
+                                        className="w-full aspect-square p-4 border-2 border-dashed border-gray-400 cursor-pointer flex items-center justify-center min-h-72"
+                                    >
+                                        <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in PDF/SVG format.</span>
+                                    </div>
+                                </div>
+
+
+                                {(
+                                    <div className=" flex gap-2 flex-col">
+                                        <p className="font-medium text-gray-600">File Preview</p>
+                                        {/* <div className='font-medium'>{selectedFile ? "Preview" : "Current file"}</div> */}
+                                        <div className='aspect-square p-5 bg-design/5 border-2 border-dark/5 border-gray-400 w-full overflow-hidden items-center justify-center flex flex-col'>
+
+                                            {
+                                                selectedFile ? (selectedFile?.type === "application/pdf" ? (
+                                                    <embed src={URL.createObjectURL(selectedFile)} type="application/pdf" width="100%" height="500px" />
+                                                ) : (
+                                                    <img
+                                                        src={URL.createObjectURL(selectedFile)}
+                                                        alt={selectedFile.name}
+                                                        className="w-full rounded-xl"
+                                                    />
+                                                )) : (
+                                                    <p>Upload pdf or svg file to preview</p>
+                                                )
+                                            }
+
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                     <div className='flex items-center justify-end gap-3 text-sm pt-10'>
-                        <button type="button" onClick={() => setOperation("")} className={`flex items-center justify-center gap-3 hover:bg-zinc-400/30 py-2 px-3 rounded-md  text-dark font-medium relative bg-design`}>Cancel</button>
+                        <button type="button" onClick={() => {
+                            setOperation("")
+                            const updatedNewFiles = newFiles
+                            delete updatedNewFiles[uniqueFileName]
+                            setNewFiles(newFiles)
+                        }} className={`flex items-center justify-center gap-3 hover:bg-zinc-400/30 py-2 px-3 rounded-md  text-dark font-medium relative bg-design`}>Cancel</button>
                         <button disabled={isAttributeAlreadyExist || !optionName} onClick={handleAdd} className={`flex items-center justify-center gap-3 py-2 px-3 rounded-md  text-dark font-medium relative  ${(isAttributeAlreadyExist || !optionName) ? 'bg-gray-300' : 'bg-green-300/90 hover:bg-green-300 '}`}>Add Option</button>
                     </div>
                 </div>

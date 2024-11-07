@@ -1,8 +1,7 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getUserAPI, createEmptyDesignAPI, logoutAPI } from '../../utility/api';
 import { toast } from 'sonner';
-import { Context } from '../../context/Context';
 import filePath from '../../utility/filePath';
 import {
     AlertDialog,
@@ -13,10 +12,11 @@ import {
 } from "../ui/Dialog"
 import { v4 as uuidv4 } from 'uuid';
 import { designTypes, initialSelectedCategories, initialStructure } from '../../constants/constants.jsx';
+import useStore from '../../store/useStore';
 
 
 const Navbar = () => {
-    const { user, setUser } = useContext(Context);
+    const { user, setUser } = useStore();
     const [isAvatarOpen, setIsAvatarOpen] = useState(false);
     // const [baseFile, setBaseFile] = useState();
 
@@ -245,62 +245,7 @@ const Navbar = () => {
                                 </div>
                             ))}
                         </div>
-
-
-
-                        {/* <label className='mt-3 py-0 font-medium' htmlFor="frameInput">Frame Sizes</label>
-                        <input
-                            type="text"
-                            id='frameInput'
-                            placeholder="Enter Frame"
-                            className='text-dark outline-none rounded-sm bg-design/40 py-4 px-5 placeholder:text-zinc-600 w-full '
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    console.log(e.target.value);
-                                    if (e.target.value !== "") {
-                                        addFrame(e.target.value);
-                                        e.target.value = ""
-                                    }
-                                }
-                            }}
-                        />
-                        <p onClick={() => {
-                            addFrame(document.getElementById('frameInput').value)
-                            document.getElementById('frameInput').value = ""
-                        }} className='rounded-full cursor-pointer px-4 py-2 bg-blue-300 text-dark text-sm my-3 font-medium items-center gap-2 inline-flex w-36'><Plus className='h-5' /> Add Frame</p>
-
-                        <div className="tags flex flex-wrap gap-2 mb-8">
-                            {frames.map((frame, i) => (
-                                <p key={i} className='px-3 py-1.5 rounded-full bg-design/80 gap-1 items-center flex'>{frame}<X onClick={removeFrame.bind(this, frame)} className='h-4 hover:text-red-400 cursor-pointer fade-in-5 animate-in' /></p>
-                            ))}
-                        </div> */}
-
-                        {/* <div className='flex flex-col gap-2'>
-                            <div className='font-medium mt-4'>Upload Base file. <span className='text-red-500'>*</span> </div>
-                            {baseFile && <div className='px-4 py-2 rounded-lg bg-blue-200'>
-                                <div>Selected file : <span className='font-medium text-red-800'>{baseFile.name}</span> </div>
-                            </div>}
-
-                            <input
-                                id='baseFile'
-                                type="file"
-                                multiple
-                                required
-                                accept='image/svg+xml'
-                                onChange={(e) => handleFileChange(e)}
-                                className="hidden"
-                            />
-
-                            <div
-                                onClick={() => handleClick('baseFile')}
-                                onDrop={(e) => { handleDrop(e, setBaseFile) }}
-                                onDragOver={handleDragOver}
-                                className="w-full p-4 border border-dashed border-gray-400 rounded-2xl cursor-pointer flex items-center justify-center min-h-72"
-                            >
-                                <span className='text-sm w-60 mx-auto text-center'>Drag and drop the base structure PDF file for the design.</span>
-                            </div>
-                        </div> */}
+                        
                     </AlertDialogDescription>
                     <button type='submit' className='bg-green-200 hover:bg-green-300 py-2 px-3 rounded-full text-dark font-medium mt-4'>Create</button>
                 </form>

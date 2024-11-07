@@ -1,10 +1,9 @@
 import PropTypes from 'prop-types';
-import { useContext } from 'react';
-import { Context } from '../../../../../context/Context';
+import useStore from '../../../../../store/useStore';
 
 const RenderNestedOptions = ({ level, isNestedLevel2 = false, levelOneNest }) => {
 
-    const { designAttributes } = useContext(Context);
+    const { designAttributes } = useStore();
 
     if (!designAttributes) {
         return;

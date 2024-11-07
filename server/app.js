@@ -48,7 +48,7 @@ app.get("/", async (req, res) => {
 const connectDB = async () => {
   mongoose.set("strictQuery", true);
   mongoose
-    .connect('mongodb://127.0.0.1:27017/designDB')
+    .connect(process.env.MONGODB_URL)
     .then(() => console.log("Connected to Mongo DB"))
     .catch((err) => {
       console.error("failed to connect with mongo");

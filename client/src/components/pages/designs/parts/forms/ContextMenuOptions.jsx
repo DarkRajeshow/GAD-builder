@@ -1,13 +1,12 @@
 import PropTypes from 'prop-types'
 import { AlertDialogTrigger } from '../../../../ui/Dialog';
-import { useContext, useEffect } from 'react';
-import { Context } from '../../../../../context/Context';
-import { v4 as uuidv4 } from 'uuid';
+import { useEffect } from 'react';
+import useStore from '../../../../../store/useStore';
 
 
 const ContextMenuOptions = ({ attributeOption, setDialogType }) => {
 
-    const { menuOf, setMenuOf, setUniqueFileName } = useContext(Context);
+    const { menuOf, setMenuOf, setUniqueFileName } = useStore()
 
     useEffect(() => {
         const AttributePath = attributeOption.split(">$>");
@@ -57,7 +56,7 @@ const ContextMenuOptions = ({ attributeOption, setDialogType }) => {
                     Rename</AlertDialogTrigger>
                 <AlertDialogTrigger
                     onClick={() => {
-                        setUniqueFileName(`${uuidv4()}.svg`);
+                        setUniqueFileName();
                         setDialogType('update');
                     }} className='text-left flex bg-dark/5 px-2 py-1.5 rounded-md items-center'>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5  mr-1">

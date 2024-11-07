@@ -1,14 +1,13 @@
-import { useContext } from 'react'
 import { AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger } from '../../../../ui/Dialog';
-import { Context } from '../../../../../context/Context';
 import { deleteDesignAttributes } from '../../../../../utility/api';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import useStore from '../../../../../store/useStore';
 
 
 function DeleteForm() {
 
-    const { menuOf, designAttributes, setDesignAttributes, generateStructure } = useContext(Context);
+    const { menuOf, designAttributes, setDesignAttributes, generateStructure, setUndoStack, setRedoStack } = useStore();
     const { id } = useParams();
 
     const tempDesignAttributes = JSON.parse(JSON.stringify(designAttributes));
@@ -18,11 +17,17 @@ function DeleteForm() {
 
     const deleteValue = () => {
         if (menuOf.length === 3) {
-            delete tempDesignAttributes[menuOf[0]].options[menuOf[1]].options[menuOf[2]];
+            if (tempDesignAttributes[menuOf[0]].options[menuOf[1]].selectedOption === menuOf[menuOf.length - 1]) {
+                tempDesignAttributes[menuOf[0]].options[menuOf[1]].selectedOption = " "
+            }
+            delete tempDesignAttributes[menuOf[0]].options[menuOf[1]].options[menuOf[menuOf.length - 1]];
         } else if (menuOf.length === 2) {
-            delete tempDesignAttributes[menuOf[0]].options[menuOf[1]];
+            if (tempDesignAttributes[menuOf[0]].selectedOption === menuOf[menuOf.length - 1]) {
+                tempDesignAttributes[menuOf[0]].selectedOption = "none"
+            }
+            delete tempDesignAttributes[menuOf[0]].options[menuOf[menuOf.length - 1]];
         } else if (menuOf.length === 1) {
-            delete tempDesignAttributes[menuOf[0]];
+            delete tempDesignAttributes[menuOf[menuOf.length - 1]];
         }
 
         return tempDesignAttributes;
@@ -53,22 +58,26 @@ function DeleteForm() {
         let attributes = deleteValue()
         let structure = generateStructure(attributes)
 
-        
-
         const body = {
             structure: structure,
             filesToDelete: extractPaths()
         }
 
-        const { data } = await deleteDesignAttributes(id, body);
-
-        if (data.success) {
-            setDesignAttributes(tempDesignAttributes)
-            toast.success(data.status);
-            document.querySelector("#close").click();
-        }
-        else {
-            toast.error(data.status);
+        try {
+            setUndoStack([]);
+            setRedoStack([]);
+            const { data } = await deleteDesignAttributes(id, body);
+            if (data.success) {
+                setDesignAttributes(tempDesignAttributes)
+                toast.success(data.status);
+                document.querySelector("#close").click();
+            }
+            else {
+                toast.error(data.status);
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error("Something went wrong. F");
         }
     }
 

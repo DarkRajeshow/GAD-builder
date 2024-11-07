@@ -1,13 +1,11 @@
 import PropTypes from 'prop-types';
-import { v4 as uuidv4 } from 'uuid';
-import { useCallback, useContext, useEffect, useRef, useState, useMemo, memo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import {
     AlertDialog,
     AlertDialogContent,
     AlertDialogTrigger,
 } from "../../../ui/Dialog"
 import { Link, useParams } from 'react-router-dom';
-import { Context } from '../../../../context/Context';
 import RenderOptions from './forms/RenderOptions';
 import { LucideEllipsisVertical } from 'lucide-react';
 import ContextMenuOptions from './forms/ContextMenuOptions';
@@ -19,15 +17,14 @@ import UpdateForm from './forms/UpdateForm';
 import { popUpQuestions } from '../../../../constants/constants';
 import { shiftToSelectedCategoryAPI } from '../../../../utility/api';
 import { toast } from 'sonner';
-
-
+import useStore from '../../../../store/useStore';
 
 const MemoizedRenderOptions = memo(RenderOptions);
 const MemoizedContextMenuOptions = memo(ContextMenuOptions);
 
 function ActionBar({ generatePDF }) {
 
-    const { loading, designAttributes, setDesignAttributes, uniqueFileName, setUniqueFileName, design, fetchProject, selectedCategory } = useContext(Context);
+    const { loading, designAttributes, uniqueFileName, setUniqueFileName, design, fetchProject, selectedCategory, toggleAttributeValue, pushToUndoStack, handleUndo, handleRedo } = useStore();
 
     const [openDropdown, setOpenDropdown] = useState(null);
     const [attributeFileName, setAttributeFileName] = useState('');
@@ -41,7 +38,6 @@ function ActionBar({ generatePDF }) {
     const [infoOpen, setInfoOpen] = useState(false)
     const [tempSelectedCategory, setTempSelectedCategory] = useState(selectedCategory)
     const [tempDesignAttributes, setTempDesignAttributes] = useState(designAttributes);
-
 
 
     const { id } = useParams()
@@ -59,23 +55,42 @@ function ActionBar({ generatePDF }) {
     const infoContext = useRef(null);
 
 
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
+                handleUndo(); // Ctrl+Z for Undo
+            }
+            if (e.ctrlKey && e.key === 'y') {
+                e.preventDefault();
+                handleRedo(); // Ctrl+Y for Redo
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [handleUndo, handleRedo]);
+
+
+
+
     const handleToggle = useCallback((key) => {
-        setDesignAttributes((prevModel) => ({
-            ...prevModel,
-            [key]: {
-                ...prevModel[key],
-                value: !prevModel[key].value
-            },
-        }));
-    }, [setDesignAttributes]);
+        pushToUndoStack(); // Push the current state before the change
+        toggleAttributeValue(key)
+
+    }, [pushToUndoStack, toggleAttributeValue]);
 
     const toggleDropdown = useCallback((attribute) => {
         setOpenDropdown(prevDropdown => prevDropdown === attribute ? null : attribute);
     }, []);
 
+
     const handleAttributeFileNameChange = useCallback(() => {
         const newInput = attributeFileName;
-        let updatedDesignAttributes = { ...designAttributes };
+        let updatedDesignAttributes = JSON.parse(JSON.stringify(designAttributes));
 
         switch (attributeType) {
             case 'normal':
@@ -155,10 +170,17 @@ function ActionBar({ generatePDF }) {
         setTempDesignAttributes(designAttributes)
     }, [attributeType, designAttributes]);
 
-    // useEffect(() => {
-    //     console.log(tempDesignAttributes);
-    // }, [tempDesignAttributes]);
 
+    // useEffect(() => {
+    //     console.log("DesignAttributes");
+    //     console.log(designAttributes);
+    // }, [designAttributes]);
+
+    
+    useEffect(() => {
+        console.log("tempDesignAttributes");
+        console.log(tempDesignAttributes);
+    }, [tempDesignAttributes]);
 
     useEffect(() => {
         setLevelOneNest("");
@@ -278,7 +300,7 @@ function ActionBar({ generatePDF }) {
                 {/* further nested options */}
                 {openDropdown === attribute && value.options && (
                     <div onMouseLeave={() => setMenuVisible(false)} className="absolute border border-gray-300 rounded-lg mt-1 bg-white z-30 min-w-max py-2">
-                        <MemoizedRenderOptions setDialogType={setDialogType} menuVisible={menuVisible} handleToggleContextMenu={handleToggleContextMenu} attribute={attribute} options={value.options} />
+                        <MemoizedRenderOptions setDialogType={setDialogType} menuVisible={menuVisible} pushToUndoStack={pushToUndoStack} handleToggleContextMenu={handleToggleContextMenu} attribute={attribute} options={value.options} />
                     </div>
                 )}
                 {(menuVisible === attribute) && (
@@ -288,7 +310,7 @@ function ActionBar({ generatePDF }) {
                 )}
             </div>
         ));
-    }, [designAttributes, openDropdown, menuVisible, handleToggle, toggleDropdown, handleToggleContextMenu]);
+    }, [designAttributes, openDropdown, menuVisible, handleToggle, toggleDropdown, handleToggleContextMenu, pushToUndoStack]);
 
     return (
         <AlertDialog className='rounded-lg col-span-3 overflow-hidden h-[10vh]'>
@@ -370,7 +392,7 @@ function ActionBar({ generatePDF }) {
                     )}
                     {dialogType === 'rename' && <RenameForm />}
                     {dialogType === 'update' && <UpdateForm />}
-                    {dialogType === "delete" && <DeleteForm generatePDF={generatePDF} />}
+                    {dialogType === "delete" && <DeleteForm />}
                     {dialogType === "export" && <ExportForm generatePDF={generatePDF} />}
                 </AlertDialogContent>
 
@@ -380,7 +402,7 @@ function ActionBar({ generatePDF }) {
 
                 <header className='px-5 gap-2 flex items-center justify-end w-40'>
                     <AlertDialogTrigger onClick={() => {
-                        setUniqueFileName(`${uuidv4()}.svg`);
+                        setUniqueFileName();
                         setDialogType("add");
                     }} id='exportBtn' className='bg-white hover:border-dark border p-3 rounded-full text-dark font-medium'>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor" className="size-5">

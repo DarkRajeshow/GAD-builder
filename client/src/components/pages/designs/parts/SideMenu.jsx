@@ -5,8 +5,6 @@ import {
     AlertDialogContent,
     AlertDialogTrigger,
 } from "../../../ui/Dialog"
-import { useContext } from "react"
-import { Context } from "../../../../context/Context"
 import { popUpQuestions, sideMenuTypes } from "../../../../constants/constants.jsx"
 import { AlertDialogDescription, AlertDialogTitle } from "@radix-ui/react-alert-dialog"
 import { toast } from "sonner"
@@ -16,11 +14,12 @@ import { handleClick, handleDragOver, handleDrop } from "../../../../utility/dra
 import filePath from "../../../../utility/filePath"
 import { shiftToSelectedCategoryAPI, updateBaseDrawingAPI } from "../../../../utility/api"
 import { useEffect } from "react"
+import useStore from "../../../../store/useStore"
 
 
 function SideMenu() {
 
-    const { design, selectedCategory, fetchProject, setFileVersion, fileVersion, baseDrawing, setBaseDrawing, loading, generateStructure } = useContext(Context)
+    const { design, selectedCategory, fetchProject, incrementFileVersion, fileVersion, baseDrawing, setBaseDrawing, loading, generateStructure } = useStore()
     const [sideMenuType, setSideMenuType] = useState("")
     const [tempSelectedCategory, setTempSelectedCategory] = useState(selectedCategory)
     const [tempBaseDrawing, setTempBaseDrawing] = useState(baseDrawing)
@@ -72,7 +71,10 @@ function SideMenu() {
                 }
             }
             else if (newBaseDrawingFile) {
-                let uniqueFileName = `${uuidv4()}.svg`
+                let uniqueFileName = uuidv4()
+                // let uniqueFileName = `${uuidv4()}.svg`
+
+                //if the base drawing is previously uploaded and user want to change the svg/pdf file
                 uniqueFileName =
                     design?.designType === "motor"
                         ? design.structure.mountingTypes[tempSelectedCategory]?.baseDrawing?.path
@@ -89,7 +91,6 @@ function SideMenu() {
                 formData.append('title', uniqueFileName);
 
 
-
                 let attributes = {}
                 if (design?.designType === "motor") {
                     attributes = design.structure.mountingTypes[tempSelectedCategory].attributes || {}
@@ -98,11 +99,11 @@ function SideMenu() {
                     attributes = design.structure.sizes[tempSelectedCategory].attributes || {}
                 }
 
+                // console.log(`${uniqueFileName.slice(0, uniqueFileName.length - 4)}.svg`);
+
                 let structure = generateStructure(attributes, {
                     path: uniqueFileName
                 }, tempSelectedCategory)
-
-
 
                 //tempDesignAttributes is a object
                 formData.append('selectedCategory', tempSelectedCategory)
@@ -119,7 +120,7 @@ function SideMenu() {
                         setBaseDrawing({
                             path: uniqueFileName
                         })
-                        setFileVersion((version) => version + 1)
+                        incrementFileVersion();
                         setIsPopUpOpen(false)
                     } else {
                         toast.error(data.status);
@@ -239,7 +240,7 @@ function SideMenu() {
                                             id='customization'
                                             type="file"
                                             multiple
-                                            accept='image/svg+xml'
+                                            accept='.svg,.pdf'
                                             onChange={(e) => handleFileChange(e)}
                                             className="hidden"
                                         />
@@ -260,11 +261,20 @@ function SideMenu() {
                                             {/* <div className='font-medium'>{selectedFile ? "Preview" : "Current file"}</div> */}
                                             <div className='aspect-square p-5 bg-design/5 border-2 border-dark/5 border-gray-400 w-full overflow-hidden items-center justify-center flex flex-col'>
 
-                                                {(tempBaseDrawing?.path || newBaseDrawingFile) && <img
-                                                    src={newBaseDrawingFile ? URL.createObjectURL(newBaseDrawingFile) : `${baseFilePath}/${tempBaseDrawing.path}?v=${fileVersion}`}
-                                                    alt={newBaseDrawingFile ? newBaseDrawingFile.name : tempBaseDrawing?.path ? tempBaseDrawing.path : "base drawing"}
-                                                    className="w-full rounded-xl"
-                                                />}
+                                                {
+                                                    (tempBaseDrawing?.path || newBaseDrawingFile) && (
+                                                        newBaseDrawingFile?.type === "application/pdf" ? (
+                                                            <embed src={URL.createObjectURL(newBaseDrawingFile)} type="application/pdf" width="100%" height="500px" />
+                                                        ) : (
+                                                            <img
+                                                                src={newBaseDrawingFile ? URL.createObjectURL(newBaseDrawingFile) : `${baseFilePath}/${tempBaseDrawing.path}.svg?v=${fileVersion}`}
+                                                                alt={newBaseDrawingFile ? newBaseDrawingFile.name : tempBaseDrawing?.path ? tempBaseDrawing.path : "base drawing"}
+                                                                className="w-full rounded-xl"
+                                                            />
+                                                        )
+                                                    )
+                                                }
+
                                             </div>
                                         </div>
                                     )}
@@ -272,17 +282,17 @@ function SideMenu() {
                             </div>
                         </div>
 
-                        <div className='flex items-center justify-end gap-3 py-3 px-2'>
+                        <div className='flex items-center justify-between gap-3 py-3 px-2'>
+                            <button disabled={saveLoading || (tempBaseDrawing === " " && !newBaseDrawingFile)} onClick={updateBaseDrawing} className={`flex w-1/2 items-center justify-center gap-3 py-2 px-3 rounded-md  text-white font-medium relative ${(tempBaseDrawing === " " && !newBaseDrawingFile) ? " bg-[#6B26DB]/60" : "bg-[#6B26DB]/90 hover:bg-[#6B26DB]"}`}>{saveLoading ? 'Saving...': 'Save & Shift'}
+                                {
+                                    saveLoading && <div className='absolute left-4 h-4 w-4 rounded-full bg-transparent border-t-transparent border-[2px] border-white animate-spin' />
+                                }
+                            </button>
                             {tempBaseDrawing !== " " && <button onClick={() => {
                                 setSideMenuType("")
                                 toggleDialog()
                                 setIsPopUpOpen(!isPopUpOpen)
-                            }} disabled={saveLoading} className={`flex items-center justify-center gap-3 py-2 px-3 rounded-md  text-dark font-medium relative bg-design`}>Cancel </button>}
-                            <button disabled={saveLoading || (tempBaseDrawing === " " && !newBaseDrawingFile)} onClick={updateBaseDrawing} className={`flex items-center justify-center gap-3 py-2 px-3 rounded-md  text-white font-medium relative ${saveLoading || (tempBaseDrawing === " " && !newBaseDrawingFile) ? " bg-[#6B26DB]/60" : "bg-[#6B26DB]/90 hover:bg-[#6B26DB]"}`}>Save & Shift
-                                {
-                                    saveLoading && <div className='absolute right-4 h-4 w-4 rounded-full bg-transparent border-t-transparent border-[2px] border-green-900 animate-spin' />
-                                }
-                            </button>
+                            }} disabled={saveLoading} className={`flex items-center justify-center w-1/2 gap-3 py-2 px-3 rounded-md  text-dark font-medium relative bg-design`}>Cancel </button>}
                         </div>
 
                     </div>}

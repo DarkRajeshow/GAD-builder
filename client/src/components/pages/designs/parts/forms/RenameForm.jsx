@@ -1,13 +1,14 @@
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import { AlertDialogTitle, AlertDialogTrigger } from '@radix-ui/react-alert-dialog';
 import AttributeNameInput from './AttributeNameInput';
-import { Context } from '../../../../../context/Context';
 import { renameAttributeAPI } from '../../../../../utility/api';
 import { toast } from 'sonner';
 import { useParams } from 'react-router-dom';
+import useStore from '../../../../../store/useStore';
 
 const RenameForm = () => {
-    const { menuOf, designAttributes, setDesignAttributes, generateStructure } = useContext(Context);
+    const { menuOf, designAttributes, setDesignAttributes, generateStructure } = useStore();
+
     const [newAttributeName, setNewAttributeName] = useState(menuOf[menuOf.length - 1]);
     const [renameLoading, setRenameLoading] = useState(false);
     const { id } = useParams();

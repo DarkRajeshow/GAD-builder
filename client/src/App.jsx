@@ -6,9 +6,7 @@ import SignUp from './components/pages/SignUp';
 import SignIn from './components/pages/SignIn';
 import Navbar from './components/layout/Navbar';
 import { useEffect, useState } from 'react';
-import DesignEdit from './components/pages/designs/DesignEdit';
-
-
+import Design from './components/pages/Design';
 
 function App() {
 
@@ -33,7 +31,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/designs/:id" element={<DesignEdit />} />
+        <Route path="/designs/:id" element={<Design />} />
       </Routes>
     </main>
   );

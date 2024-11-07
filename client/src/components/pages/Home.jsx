@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import DesignCard from "../parts/DesignCard";
+import DesignCard from "../../features/cards/DesignCard";
 import useStore from "../../store/useStore";
 
 function Home() {

@@ -3,7 +3,7 @@
 import React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import PropTypes from "prop-types";
-import { cn } from "../lib/utils";
+import { cn } from "../../utility/utils";
 
 const Slider = React.forwardRef(
     ({ className, ...props }, ref) => (

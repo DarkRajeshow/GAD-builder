@@ -21,6 +21,10 @@ const DesignSchema = new Schema({
     type: String,
     required: true,
   },
+  selectedPage: {
+    type: String,
+    required: true,
+  },
   designType: {
     type: String,
     required: true,

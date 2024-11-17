@@ -7,6 +7,8 @@ const createFileSlice = (set) => ({
     fileVersion: 1,
     newFiles: {},
     operations: {},
+    fileList: {},
+
 
     // setFileName: (name) => set({ fileName: name }),
     // Set unique file name
@@ -15,6 +17,9 @@ const createFileSlice = (set) => ({
     incrementFileVersion: () => set((state) => ({ fileVersion: state.fileVersion + 1 })),
     setNewFiles: (files) => set({ newFiles: files }),
     setOperations: (operations) => set({ operations }),
+    setFileList: (newFileList) => set({ fileList: newFileList }),
+
+    // Action to check if a file exists in the list
 });
 
 export default createFileSlice;

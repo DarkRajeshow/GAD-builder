@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { handleClick, handleDragOver } from "../../utility/dragDrop";
+import { handleClick, handleDragOver } from "../../../utility/dragDrop";
 import PropTypes from 'prop-types';
-import useStore from "../../store/useStore";
+import useStore from "../../../store/useStore";
 
 
-function AddChildForm({ nestedIn = "", setOperation, updatedValue }) {
+function AddChild({ nestedIn = "", setOperation, updatedValue }) {
 
     const { menuOf, newFiles, setNewFiles, setUpdatedAttributes, updatedAttributes, uniqueFileName, setUniqueFileName } = useStore();
     const [optionName, setOptionName] = useState("");
@@ -334,10 +334,10 @@ function AddChildForm({ nestedIn = "", setOperation, updatedValue }) {
         </div>
     )
 }
-AddChildForm.propTypes = {
+AddChild.propTypes = {
     nestedIn: PropTypes.string,
     updatedValue: PropTypes.object.isRequired,
     setOperation: PropTypes.func.isRequired,
 };
 
-export default AddChildForm;
+export default AddChild;

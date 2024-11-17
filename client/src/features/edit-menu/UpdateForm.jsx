@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import AttributeOption from './AttributeOption';
-import { updateDesignAttributes, deleteDesignAttributes } from '../../utility/api';
+import UpdateChild from './update/UpdateChild';
+import { updateDesignAttributesAPI, deleteDesignAttributesAPI } from '../../utility/api';
 import { toast } from 'sonner';
 import { handleClick, handleDragOver } from '../../utility/dragDrop'
 import filePath from '../../utility/filePath';
-import AddChildForm from './AddChildForm';
+import AddChild from './update/AddChild';
 import useStore from '../../store/useStore';
 import { AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger } from '../../components/ui/Dialog';
 
@@ -155,19 +155,27 @@ function UpdateForm() {
 
             const formData = new FormData();
 
-            const structure = generateStructure(updatedDesignAttributes)
+            const structure = generateStructure({
+                updatedAttributes: updatedDesignAttributes
+            })
 
             formData.append('folder', design.folder);
 
             //tempDesignAttributes is a object
             formData.append('structure', JSON.stringify(structure));
 
-            // Append files to FormData
             for (const [title, file] of Object.entries(newFiles)) {
                 formData.append('files', file, title + file.name.slice(file.name.length - 4));
             }
 
-            const { data } = await updateDesignAttributes(id, formData);
+
+
+            // for (const [key, { file, folder }] of Object.entries(newFiles)) {
+            //     const customName = `${folder}/${title}${file.name.slice(-4)}`; // Folder path + filename
+            //     formData.append('files', file, customName);
+            // }
+
+            const { data } = await updateDesignAttributesAPI(id, formData);
 
             if (data.success) {
                 setDesignAttributes(updatedDesignAttributes)
@@ -230,14 +238,16 @@ function UpdateForm() {
     const handleDelete = async () => {
         const updateValueAfterDelete = await deleteValue();
 
-        let structure = generateStructure(updateValueAfterDelete)
+        let structure = generateStructure({
+            updatedAttributes: updateValueAfterDelete
+        })
 
         const body = {
             structure: structure,
             filesToDelete: await extractPaths()
         }
 
-        const { data } = await deleteDesignAttributes(id, body);
+        const { data } = await deleteDesignAttributesAPI(id, body);
 
         if (data.success) {
             setDesignAttributes(updateValueAfterDelete);
@@ -348,7 +358,7 @@ function UpdateForm() {
                 {operation === "add" &&
                     <div className='rounded-lg bg-white/40 overflow-hidden py-4 px-4 flex flex-col gap-3'>
                         <h1 className=''>Add attribute in <span className='text-red-500'>{menuOf[menuOf.length - 1]}</span></h1>
-                        <AddChildForm updatedValue={updatedValue} setOperation={setOperation} />
+                        <AddChild updatedValue={updatedValue} setOperation={setOperation} />
                     </div>
                 }
                 {operation === "delete" &&
@@ -373,7 +383,7 @@ function UpdateForm() {
                     {Object.entries(selectedAttributeValue?.options).map(([option, value]) => {
                         if (option !== "none") {
                             return (
-                                <AttributeOption key={option} path={[...menuOf, option]} updatedValue={updatedValue} setUpdatedValue={setUpdatedValue} option={option} value={value} />
+                                <UpdateChild key={option} path={[...menuOf, option]} updatedValue={updatedValue} setUpdatedValue={setUpdatedValue} option={option} value={value} />
                             )
                         }
                     })}

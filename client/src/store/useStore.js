@@ -67,6 +67,7 @@ const useStore = create((set, get) => ({
                 set({
                     design: data.design,
                     selectedCategory: data.design?.selectedCategory,
+                    selectedPage: data.design?.selectedPage
                 });
                 // Set attributes and drawing based on design type
                 const designType = data.design.designType;
@@ -76,11 +77,13 @@ const useStore = create((set, get) => ({
                     set({
                         designAttributes: structure?.mountingTypes[category]?.attributes || {},
                         baseDrawing: structure?.mountingTypes[category]?.baseDrawing || '',
+                        pages: structure?.mountingTypes[category]?.pages || []
                     });
                 } else if (designType === "smiley") {
                     set({
                         designAttributes: structure?.sizes[category]?.attributes || {},
                         baseDrawing: structure?.sizes[category]?.baseDrawing || '',
+                        pages: structure?.sizes[category]?.pages || []
                     });
                 }
             } else {
@@ -92,15 +95,21 @@ const useStore = create((set, get) => ({
             set({ loading: false });
         }
     },
-    
 
-    generateStructure: (attributes = null, baseDrawingObj = null, category = null) => {
-        const { designAttributes, baseDrawing, selectedCategory, design } = get();
+
+    generateStructure: ({
+        updatedAttributes = null,
+        updatedBaseDrawing = null,
+        updatedCategory = null,
+        updatedPages = null
+    } = {}) => {
+        const { designAttributes, baseDrawing, selectedCategory, design, pages } = get();
 
         // Use store state values if parameters are not provided
-        const finalAttributes = attributes || designAttributes;
-        const finalBaseDrawing = baseDrawingObj || baseDrawing;
-        const finalCategory = category || selectedCategory;
+        const finalAttributes = updatedAttributes || designAttributes;
+        const finalBaseDrawing = updatedBaseDrawing || baseDrawing;
+        const finalCategory = updatedCategory || selectedCategory;
+        const finalPages = updatedPages || pages;
 
         let structure = design.structure;
 
@@ -108,12 +117,14 @@ const useStore = create((set, get) => ({
         if (design?.designType === "motor") {
             structure.mountingTypes[finalCategory] = {
                 ...structure.mountingTypes[finalCategory],
+                pages: finalPages,
                 attributes: finalAttributes,
                 baseDrawing: finalBaseDrawing
             };
         } else if (design?.designType === "smiley") {
             structure.sizes[finalCategory] = {
                 ...structure.sizes[finalCategory],
+                pages: finalPages,
                 attributes: finalAttributes,
                 baseDrawing: finalBaseDrawing
             };
@@ -203,6 +214,12 @@ const useStore = create((set, get) => ({
             undoStack: [...state.undoStack, state.designAttributes],
         };
     }),
+
+
+    checkFileExists: (page, fileName) => {
+        const fileList = get().fileList;
+        return fileList[page]?.includes(fileName) || false;
+    }
 }));
 
 export default useStore;

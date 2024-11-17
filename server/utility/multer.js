@@ -6,8 +6,14 @@ const __dirname = path.resolve();
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const desingFolder = req.body.folder || 'uploads'; // Default folder
-        const uploadPath = path.join(__dirname, '..', 'server', 'public', 'uploads', desingFolder);
+        // Parse the folder path from the `file.originalname`
+        const filePathParts = file.originalname.split('<<&&>>');
+        const pagefolder = filePathParts.length > 1 ? filePathParts[0] : ''; // Extract folder name
+
+        console.log(file.originalname);
+        
+        const designFolder = req.body.folder || 'uploads'; // Default root folder if not specified
+        const uploadPath = path.join(__dirname, '..', 'server', 'public', 'uploads', designFolder, pagefolder);
 
         // Create the directory synchronously
         try {
@@ -21,8 +27,10 @@ const storage = multer.diskStorage({
 
         const ext = path.extname(file.originalname) || '.svg'; // Default to '.svg' if there's no extension
         console.log("File name : " + file.originalname);
+        const filePathParts = file.originalname.split('<<&&>>');
+        const filename = filePathParts.length > 1 ? filePathParts.slice(1).join('') : file.originalname;
 
-        const uniqueName = req.body.title ? req.body.title + ext : file.originalname ? file.originalname : "base.svg";
+        const uniqueName = req.body.title ? req.body.title + ext : file.originalname ? filename : "base.svg";
         cb(null, uniqueName);
     }
 });

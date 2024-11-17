@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import useStore from '../../store/useStore';
 import { AlertDialogDescription, AlertDialogTrigger, AlertDialogTitle } from '../../components/ui/Dialog';
-import { deleteDesignAttributes } from '../../utility/api';
+import { deleteDesignAttributesAPI } from '../../utility/api';
 
 
 function DeleteForm() {
@@ -56,7 +56,9 @@ function DeleteForm() {
     const handleDelete = async () => {
 
         let attributes = deleteValue()
-        let structure = generateStructure(attributes)
+        let structure = generateStructure({
+            updatedAttributes: attributes
+        })
 
         const body = {
             structure: structure,
@@ -66,7 +68,7 @@ function DeleteForm() {
         try {
             setUndoStack([]);
             setRedoStack([]);
-            const { data } = await deleteDesignAttributes(id, body);
+            const { data } = await deleteDesignAttributesAPI(id, body);
             if (data.success) {
                 setDesignAttributes(tempDesignAttributes)
                 toast.success(data.status);

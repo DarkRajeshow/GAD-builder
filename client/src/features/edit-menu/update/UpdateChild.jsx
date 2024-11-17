@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'sonner';
-import { handleDragOver } from '../../utility/dragDrop';
-import filePath from '../../utility/filePath';
-import AddChildForm from './AddChildForm';
-import useStore from '../../store/useStore';
+import { handleDragOver } from '../../../utility/dragDrop';
+import filePath from '../../../utility/filePath';
+import AddChild from './AddChild';
+import useStore from '../../../store/useStore';
 
-function AttributeOption({ parentOption = "", nestedIn = "", setUpdatedValue, updatedValue, option, value }) {
+function UpdateChild({ parentOption = "", nestedIn = "", setUpdatedValue, updatedValue, option, value }) {
     const [renamedOption, setRenamedOption] = useState(option);
 
     const [operation, setOperation] = useState("");
@@ -199,7 +199,7 @@ function AttributeOption({ parentOption = "", nestedIn = "", setUpdatedValue, up
                                     <p className='pb-2 font-medium text-lg '>Nested Childs</p>
                                     <div className='pl-3 ml-3 border-l-2 border-dark/10 my-2 '>
                                         {Object.entries(value?.options).map(([subOption, subValue]) => (
-                                            <AttributeOption parentOption={option} nestedIn={renamedOption} key={subOption} updatedValue={updatedValue} setUpdatedValue={setUpdatedValue} option={subOption} value={subValue} />
+                                            <UpdateChild parentOption={option} nestedIn={renamedOption} key={subOption} updatedValue={updatedValue} setUpdatedValue={setUpdatedValue} option={subOption} value={subValue} />
                                         ))}
                                     </div>
                                 </div>
@@ -218,7 +218,7 @@ function AttributeOption({ parentOption = "", nestedIn = "", setUpdatedValue, up
                     {operation === "add" &&
                         <div className='rounded-lg bg-white/40 overflow-hidden py-4 px-4 flex flex-col gap-3'>
                             <h1 className=''>Add child attribute in <span className='text-red-500'>{renamedOption}</span></h1>
-                            <AddChildForm updatedValue={updatedValue} nestedIn={option} setOperation={setOperation} />
+                            <AddChild updatedValue={updatedValue} nestedIn={option} setOperation={setOperation} />
                         </div>
                     }
                 </div>
@@ -227,7 +227,7 @@ function AttributeOption({ parentOption = "", nestedIn = "", setUpdatedValue, up
     );
 }
 
-AttributeOption.propTypes = {
+UpdateChild.propTypes = {
     nestedIn: PropTypes.string,
     parentOption: PropTypes.string,
     setUpdatedValue: PropTypes.func.isRequired,
@@ -236,4 +236,4 @@ AttributeOption.propTypes = {
     value: PropTypes.object.isRequired
 };
 
-export default AttributeOption;
+export default UpdateChild;

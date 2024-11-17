@@ -27,7 +27,10 @@ const config = {
         design: "#D4D6D8",
         disappeared: "#EBEEF1",
         actionBar: "#DCE0E4",
-        theme: "#FFF9F2"
+        theme: "#FFF9F2",
+        exists:"#65e892",
+        notExists:"#FF5757" 
+
       },
       backgroundImage: {
         nav: 'linear-gradient(180deg, rgba(255,249,242,1) 0%, rgba(213,246,254,1) 100%);'

@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 export const designTypes = {
     motor: {
         questions: [
@@ -59,22 +61,37 @@ export const initialStructure = {
     motor: {
         mountingTypes: {
             B3: {
+                pages: {
+                    gad: uuidv4()
+                },
                 baseDrawing: " ",
                 attributes: {}
             },
             B5: {
+                pages: {
+                    gad: uuidv4()
+                },
                 baseDrawing: " ",
                 attributes: {}
             },
             B14: {
+                pages: {
+                    gad: uuidv4()
+                },
                 baseDrawing: " ",
                 attributes: {}
             },
             B35: {
+                pages: {
+                    gad: uuidv4()
+                },
                 baseDrawing: " ",
                 attributes: {}
             },
             V1: {
+                pages: {
+                    gad: uuidv4()
+                },
                 baseDrawing: " ",
                 attributes: {}
             }
@@ -83,14 +100,23 @@ export const initialStructure = {
     smiley: {
         sizes: {
             small: {
+                pages: {
+                    gad: uuidv4()
+                },
                 baseDrawing: " ",
                 attributes: {}
             },
             medium: {
+                pages: {
+                    gad: uuidv4()
+                },
                 baseDrawing: " ",
                 attributes: {}
             },
             large: {
+                pages: {
+                    gad: uuidv4()
+                },
                 baseDrawing: " ",
                 attributes: {}
             }
@@ -177,10 +203,10 @@ export const sideMenuTypes = [
 
 
 export const initialSelectedCategories = {
-    motor : {
+    motor: {
         selectedCategory: "B3"
     },
-    smiley : {
+    smiley: {
         selectedCategory: "small"
     }
 }

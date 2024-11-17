@@ -11,7 +11,7 @@ import {
     AlertDialogTrigger,
 } from "../ui/Dialog"
 import { v4 as uuidv4 } from 'uuid';
-import { designTypes, initialSelectedCategories, initialStructure } from '../../constants/constants.jsx';
+import { designTypes, initialSelectedCategories, initialStructure } from '../../constants/index.jsx';
 import useStore from '../../store/useStore';
 
 
@@ -150,6 +150,7 @@ const Navbar = () => {
                 selectedCategory: initialSelectedCategories[selectedDesignType].selectedCategory,
                 designInfo: designInfo,
                 folder: uniqueFolder,
+                selectedPage: 'gad',
                 structure: initialStructure[selectedDesignType]
             });
 

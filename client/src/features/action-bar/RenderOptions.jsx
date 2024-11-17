@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import PropTypes from 'prop-types'
 import { LucideEllipsisVertical } from "lucide-react";
-import ContextMenuOptions from "./ContextMenuOptions";
+import ContextMenuOptions from "../edit-menu/EditMenu";
 import useStore from "../../store/useStore";
 
 
@@ -13,6 +13,8 @@ const RenderOptions = ({ pushToUndoStack, attribute, options, handleToggleContex
 
     const handleOptionChange = (option) => {
         pushToUndoStack(); // Push the current state before the change
+
+        //store function
         updateSelectedOption(attribute, option)
         // setDesignAttributes((prevModel) => ({
         //     ...prevModel,
@@ -26,6 +28,8 @@ const RenderOptions = ({ pushToUndoStack, attribute, options, handleToggleContex
 
     const handleSubOptionChange = (option, subOption) => {
         pushToUndoStack(); // Push the current state before the change
+        
+        //store function
         updateSelectedSubOption(attribute, option, subOption)
         // setDesignAttributes((prevModel) => ({
         //     ...prevModel,

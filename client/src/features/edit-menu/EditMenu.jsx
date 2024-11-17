@@ -4,7 +4,7 @@ import { AlertDialogTrigger } from '../../components/ui/Dialog';
 import useStore from '../../store/useStore';
 
 
-const ContextMenuOptions = ({ attributeOption, setDialogType }) => {
+const EditMenu = ({ attributeOption, setDialogType }) => {
 
     const { menuOf, setMenuOf, setUniqueFileName } = useStore()
 
@@ -77,9 +77,9 @@ const ContextMenuOptions = ({ attributeOption, setDialogType }) => {
 
 };
 
-ContextMenuOptions.propTypes = {
+EditMenu.propTypes = {
     attributeOption: PropTypes.string.isRequired,
     setDialogType: PropTypes.func.isRequired
 };
 
-export default ContextMenuOptions;
+export default EditMenu;

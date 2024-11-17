@@ -5,37 +5,58 @@ import {
     AlertDialogContent,
     AlertDialogTrigger,
 } from "../../components/ui/Dialog"
-// import { popUpQuestions, sideMenuTypes } from "../../../constants/constants.jsx"
 import { AlertDialogDescription, AlertDialogTitle } from "@radix-ui/react-alert-dialog"
 import { toast } from "sonner"
 import { v4 as uuidv4 } from 'uuid';
 import { useParams } from "react-router-dom"
-import { handleClick, handleDragOver, handleDrop } from "../../utility/dragDrop"
+import { handleClick, handleDragOver } from "../../utility/dragDrop"
 import { shiftToSelectedCategoryAPI, updateBaseDrawingAPI } from "../../utility/api"
 import { useEffect } from "react"
 import useStore from "../../store/useStore"
-import { popUpQuestions, sideMenuTypes } from "../../constants/constants";
+import { popUpQuestions, sideMenuTypes } from "../../constants";
 import filePath from "../../utility/filePath";
+import { checkFileExists } from "../../utility/checkFileExists";
+
+
 
 
 function SideMenu() {
 
-    const { design, selectedCategory, fetchProject, incrementFileVersion, fileVersion, baseDrawing, setBaseDrawing, loading, generateStructure } = useStore()
+    const { design, selectedCategory, fetchProject, incrementFileVersion, fileVersion, baseDrawing, setBaseDrawing, loading, generateStructure, pages } = useStore()
     const [sideMenuType, setSideMenuType] = useState("")
     const [tempSelectedCategory, setTempSelectedCategory] = useState(selectedCategory)
     const [tempBaseDrawing, setTempBaseDrawing] = useState(baseDrawing)
     const [saveLoading, setSaveLoading] = useState(false)
-    const [newBaseDrawingFile, setNewBaseDrawingFile] = useState()
+    const [newBaseDrawingFiles, setNewBaseDrawingFiles] = useState({})
     const [isPopUpOpen, setIsPopUpOpen] = useState(false)
-
+    const [tempPages, setTempPages] = useState(pages || {})
+    const [newPageName, setNewPageName] = useState('')
+    const [choosenPage, setChoosenPage] = useState('gad')
+    const [fileExistenceStatus, setFileExistenceStatus] = useState({});
 
     const { id } = useParams();
 
     // Function to handle file selection
     const handleFileChange = (e) => {
-        setNewBaseDrawingFile(e.target.files[0]);
+        console.log(e.target.files);
+
+        setNewBaseDrawingFiles({
+            ...newBaseDrawingFiles,
+            [tempPages[choosenPage]]: e.target.files[0]
+        });
     };
 
+    const handleDrop = (e, setFile) => {
+        e.preventDefault();
+        if (e.dataTransfer.files[0].type === 'image/svg+xml' || e.dataTransfer.files[0].type === 'application/pdf') {
+            setFile({
+                ...newBaseDrawingFiles,
+                [tempPages[choosenPage]]: e.target.files[0]
+            });
+        } else {
+            toast.error('Please choose a pdf/svg file.');
+        }
+    };
 
 
     // Function to submit the form and create a new design
@@ -44,20 +65,43 @@ function SideMenu() {
 
         if (!loading) {
 
-            if (!newBaseDrawingFile && tempBaseDrawing === " ") {
-                toast.warning("You must upload the base drawing with the above combinations to proceed.")
+            const fileUploadCount = Object.keys(tempPages).reduce((count, page) => {
+                const exists = fileExistenceStatus[page]
+                if (exists) {
+                    return count + 1
+                }
+                return count
+            }, 0)
+            const newFileUploadCount = newBaseDrawingFiles ? Object.keys(newBaseDrawingFiles).length : 0
+
+            if (((newFileUploadCount + fileUploadCount) !== Object.keys(tempPages).length)) {
+                toast.warning("You must upload the base drawing for all the pages to proceed.")
                 setSaveLoading(false)
                 return
             }
 
-            else if (!newBaseDrawingFile) {
+            else if (!newBaseDrawingFiles) {
                 try {
+
+                    let structure = generateStructure({
+                        updatedCategory: tempSelectedCategory,
+                        updatedPages: tempPages
+                    })
+
+
+                    const pagesNames = Object.keys(pages).filter((page) => !tempPages[page])
+
+                    const folderNames = pagesNames.map((page) => pages[page])
+
                     const { data } = await shiftToSelectedCategoryAPI(id, {
-                        selectedCategory: tempSelectedCategory
+                        selectedCategory: tempSelectedCategory,
+                        structure,
+                        folderNames
                     });
+
                     if (data.success) {
                         toast.success(data.status);
-                        setNewBaseDrawingFile();
+                        setNewBaseDrawingFiles();
                         await fetchProject(id);
                         setSideMenuType("")
 
@@ -71,7 +115,7 @@ function SideMenu() {
                     toast.error('Something went wrong, please try again.');
                 }
             }
-            else if (newBaseDrawingFile) {
+            else {
                 let uniqueFileName = uuidv4()
                 // let uniqueFileName = `${uuidv4()}.svg`
 
@@ -89,7 +133,7 @@ function SideMenu() {
                 const formData = new FormData();
 
                 formData.append('folder', design.folder);
-                formData.append('title', uniqueFileName);
+                // formData.append('title', uniqueFileName);
 
 
                 let attributes = {}
@@ -102,20 +146,35 @@ function SideMenu() {
 
                 // console.log(`${uniqueFileName.slice(0, uniqueFileName.length - 4)}.svg`);
 
-                let structure = generateStructure(attributes, {
-                    path: uniqueFileName
-                }, tempSelectedCategory)
+                let structure = generateStructure({
+                    updatedAttributes: attributes,
+                    updatedBaseDrawing: {
+                        path: uniqueFileName
+                    },
+                    updatedCategory: tempSelectedCategory,
+                    updatedPages: tempPages
+                })
 
                 //tempDesignAttributes is a object
                 formData.append('selectedCategory', tempSelectedCategory)
                 formData.append('structure', JSON.stringify(structure));
-                formData.append('svgFile', newBaseDrawingFile);
+
+
+
+                for (const [folder, file] of Object.entries(newBaseDrawingFiles)) {
+                    const customName = `${folder}<<&&>>${uniqueFileName}${file.name.slice(-4)}`; // Folder path + filename
+                    console.log(customName);
+
+                    formData.append('files', file, customName);
+                }
+
+                // formData.append('svgFile', newBaseDrawingFiles);
 
                 try {
                     const { data } = await updateBaseDrawingAPI(id, formData);
                     if (data.success) {
                         toast.success(data.status);
-                        setNewBaseDrawingFile();
+                        setNewBaseDrawingFiles();
                         await fetchProject(id);
                         setSideMenuType("")
                         setBaseDrawing({
@@ -145,11 +204,41 @@ function SideMenu() {
 
 
     useEffect(() => {
-        setTempBaseDrawing(baseDrawing)
-        if (baseDrawing === " " && !loading) {
-            setIsPopUpOpen(true)
+        setTempBaseDrawing(baseDrawing);
+
+        if (!loading && baseDrawing === " ") {
+            setIsPopUpOpen(true);
         }
-    }, [baseDrawing, loading])
+
+        const checkFilesExistence = async () => {
+            const results = await Promise.all(
+                Object.entries(tempPages).map(async ([pageFolder]) => {
+                    const exists = await checkFileExists(`${baseFilePath}/${tempPages[pageFolder]}/${baseDrawing?.path}.svg`);
+                    return { [pageFolder]: exists };
+                })
+            );
+
+            // Convert array of objects to a single object with pageFolder as keys
+            const statusObject = results.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+
+            console.log(statusObject); // Log the result object to check status by pageFolder
+
+            // Update state with the full object
+            setFileExistenceStatus(statusObject);
+
+            // Check if any file is missing to open the popup
+            if (Object.values(statusObject).some((exists) => !exists)) {
+                setIsPopUpOpen(true);
+            }
+        };
+
+        if (baseDrawing && !loading) {
+            checkFilesExistence();
+        }
+    }, [baseDrawing, loading, tempPages, baseFilePath]);
+
+
+
 
     useEffect(() => {
         setTempSelectedCategory(selectedCategory)
@@ -157,11 +246,20 @@ function SideMenu() {
 
 
     useEffect(() => {
-        setNewBaseDrawingFile()
+        setTempPages(pages)
+        setChoosenPage(Object.keys(pages)[Object.keys(pages).length - 1])
+    }, [pages])
+
+    useEffect(() => {
+        setNewBaseDrawingFiles()
     }, [tempSelectedCategory])
+
+
+    const allowedToClose = (tempBaseDrawing !== " " && !(Object.keys(tempPages).some((page) => !fileExistenceStatus?.[page])))
+
     return (
         <AlertDialog open={isPopUpOpen}>
-            <div className="absolute w-12 rounded-full flex items-center flex-col bg-white border-2 -translate-y-1/2 top-1/2 left-10 z-40 p-1 gap-1">
+            <div className="absolute select-none w-12 rounded-full flex items-center flex-col bg-white border-2 -translate-y-1/2 top-1/2 left-10 z-40 p-1 gap-1">
                 {sideMenuTypes.map((type, index) => (
                     <AlertDialogTrigger onClick={() => {
                         setSideMenuType(type.value)
@@ -180,10 +278,10 @@ function SideMenu() {
                 <AlertDialogTrigger id='closeButtonSideMenu' hidden></AlertDialogTrigger>
 
 
-                <AlertDialogContent className={"bg-white max-h-[80vh] min-h-[40vh] w-[750px] overflow-y-auto p-6"}>
+                <AlertDialogContent className={"select-none bg-white max-h-[80vh] min-h-[40vh] w-[750px] overflow-y-auto p-6"}>
 
 
-                    {(tempBaseDrawing !== " " && tempBaseDrawing === baseDrawing) && <button onClick={() => {
+                    {allowedToClose && <button onClick={() => {
                         setSideMenuType("")
                         toggleDialog()
                         setIsPopUpOpen(!isPopUpOpen)
@@ -209,11 +307,15 @@ function SideMenu() {
                                         let structure = design.structure
 
                                         //designTypeCode
+
                                         if (design?.designType === "motor") {
                                             setTempBaseDrawing(structure.mountingTypes[e.target.value].baseDrawing)
+                                            setTempPages(structure?.mountingTypes[e.target.value]?.pages || [])
+
                                         }
                                         else if (design?.designType === "smiley") {
                                             setTempBaseDrawing(structure.sizes[e.target.value].baseDrawing)
+                                            setTempPages(structure?.sizes[e.target.value]?.pages || [])
                                         }
                                     }}
                                     className="py-3 px-2 bg-white/80 rounded-md border w-full outline-none"
@@ -227,28 +329,81 @@ function SideMenu() {
                             </div>
                         ))}
 
-                        <div className='flex gap-2 w-full h-full items-center justify-between px-2 pt-2'>
+                        <div id="pages" className="py-3 flex gap-2 flex-col ">
+                            <p className='font-medium text-lg'>Add pages</p>
+                            <div className={`group cursor-text bg-blue-50/40 py-1 focus-within:bg-blue-50/60 rounded-md flex items-center justify-center gap-2 px-2 mb-3`}>
+                                <input
+                                    id='newPageName'
+                                    required
+                                    type="text"
+                                    value={newPageName}
+                                    onChange={(e) => setNewPageName(e.target.value)}
+                                    className="focus:bg-transparent bg-transparent h-full mt-0 w-full outline-none py-3 px-4"
+                                    placeholder="e.g my-design"
+                                />
+                                {newPageName &&
+                                    <svg onClick={() => {
+                                        if (newPageName in tempPages) {
+                                            return toast.warning(`Page "${newPageName}" Already Exist`)
+                                        }
+                                        setTempPages((prevTempPages) => ({
+                                            ...prevTempPages,
+                                            [newPageName]: uuidv4()
+                                        }))
+                                        setNewPageName('')
+                                    }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-9 w-9 p-1.5 rounded-full bg-white hover:border-black border transition-all cursor-pointer">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                }
+                            </div>
+                            <div>
+                                <p className='font-medium mb-3 capitalize'>pages</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {Object.keys(tempPages).map((pageName) => (
+                                        <div key={pageName} className={`text-center px-4 uppercase font-medium cursor-pointer relative border ${fileExistenceStatus[pageName] ? "bg-exists/30": "bg-notExists/20" } ${choosenPage === pageName ? 'border-black' : 'border-transparent'}`}>
+                                            <p className="mx-4 py-3" onClick={() => {
+                                                setChoosenPage(pageName)
+                                            }}>
+                                                {pageName}
+                                            </p>
+
+                                            {pageName !== 'gad' && <svg onClick={() => {
+                                                let updatedTempPages = { ...tempPages }
+                                                delete updatedTempPages[pageName]
+                                                if (choosenPage === pageName) {
+                                                    setChoosenPage('gad')
+                                                }
+                                                setTempPages(updatedTempPages)
+                                            }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 rounded-full cursor-pointer transition-all absolute right-2 top-2 text-red-700">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className='flex gap-2 w-full h-full items-center justify-between px-5 py-6 rounded-md bg-blue-50'>
                             <div className='blur-none w-full'>
-                                <p className='font-medium text-lg'>Change File</p>
+                                <h2 className='font-semibold text-gray-500 uppercase pb-2'>Base Drawing for Page `{choosenPage}`</h2>
+                                <p className='font-medium text-lg'>Upload File</p>
                                 <p className="text-red-700 font-semibold">
                                     {tempBaseDrawing === " " && "You must upload the base drawing with the above combinations to proceed."}
                                 </p>
                                 <div className='grid grid-cols-2 gap-4 pt-5'>
                                     <div className='flex flex-col gap-2'>
-                                        <p className="font-medium text-gray-600">Change File</p>
-                                        {/* <div className='font-medium'>Upload to change file</div> */}
+                                        <p className="font-medium text-gray-600">Select File</p>
                                         <input
-                                            id='customization'
+                                            id='baseDrawingInput'
                                             type="file"
-                                            multiple
                                             accept='.svg,.pdf'
-                                            onChange={(e) => handleFileChange(e)}
+                                            onChange={handleFileChange}
                                             className="hidden"
                                         />
 
                                         <div
-                                            onClick={() => handleClick('customization')}
-                                            onDrop={(e) => { handleDrop(e, setNewBaseDrawingFile) }}
+                                            onClick={() => handleClick('baseDrawingInput')}
+                                            onDrop={(e) => { handleDrop(e, setNewBaseDrawingFiles) }}
                                             onDragOver={handleDragOver}
                                             className="w-full aspect-square p-4 border-2 border-dashed border-gray-400 cursor-pointer flex items-center justify-center min-h-72"
                                         >
@@ -263,13 +418,13 @@ function SideMenu() {
                                             <div className='aspect-square p-5 bg-design/5 border-2 border-dark/5 border-gray-400 w-full overflow-hidden items-center justify-center flex flex-col'>
 
                                                 {
-                                                    (tempBaseDrawing?.path || newBaseDrawingFile) && (
-                                                        newBaseDrawingFile?.type === "application/pdf" ? (
-                                                            <embed src={URL.createObjectURL(newBaseDrawingFile)} type="application/pdf" width="100%" height="500px" />
+                                                    (tempBaseDrawing?.path && fileExistenceStatus[choosenPage] || newBaseDrawingFiles?.[tempPages[choosenPage]]) && (
+                                                        newBaseDrawingFiles?.[tempPages[choosenPage]]?.type === "application/pdf" ? (
+                                                            <embed src={URL.createObjectURL(newBaseDrawingFiles?.[tempPages[choosenPage]])} type="application/pdf" width="100%" height="500px" />
                                                         ) : (
                                                             <img
-                                                                src={newBaseDrawingFile ? URL.createObjectURL(newBaseDrawingFile) : `${baseFilePath}/${tempBaseDrawing.path}.svg?v=${fileVersion}`}
-                                                                alt={newBaseDrawingFile ? newBaseDrawingFile.name : tempBaseDrawing?.path ? tempBaseDrawing.path : "base drawing"}
+                                                                src={newBaseDrawingFiles?.[tempPages[choosenPage]] ? URL.createObjectURL(newBaseDrawingFiles?.[tempPages[choosenPage]]) : `${baseFilePath}/${tempPages[choosenPage]}/${tempBaseDrawing?.path}.svg?v=${fileVersion}`}
+                                                                alt={"base drawing"}
                                                                 className="w-full rounded-xl"
                                                             />
                                                         )
@@ -284,12 +439,12 @@ function SideMenu() {
                         </div>
 
                         <div className='flex items-center justify-between gap-3 py-3 px-2'>
-                            <button disabled={saveLoading || (tempBaseDrawing === " " && !newBaseDrawingFile)} onClick={updateBaseDrawing} className={`flex w-1/2 items-center justify-center gap-3 py-2 px-3 rounded-md  text-white font-medium relative ${(tempBaseDrawing === " " && !newBaseDrawingFile) ? " bg-[#6B26DB]/60" : "bg-[#6B26DB]/90 hover:bg-[#6B26DB]"}`}>{saveLoading ? 'Saving...' : 'Save & Shift'}
+                            <button disabled={saveLoading || (tempBaseDrawing === " " && !newBaseDrawingFiles)} onClick={updateBaseDrawing} className={`flex w-1/2 items-center justify-center gap-3 py-2 px-3 rounded-md  text-white font-medium relative ${(tempBaseDrawing === " " && !newBaseDrawingFiles) ? " bg-[#6B26DB]/60" : "bg-[#6B26DB]/90 hover:bg-[#6B26DB]"}`}>{saveLoading ? 'Saving...' : 'Save & Shift'}
                                 {
                                     saveLoading && <div className='absolute left-4 h-4 w-4 rounded-full bg-transparent border-t-transparent border-[2px] border-white animate-spin' />
                                 }
                             </button>
-                            {tempBaseDrawing !== " " && <button onClick={() => {
+                            {allowedToClose && <button onClick={() => {
                                 setSideMenuType("")
                                 toggleDialog()
                                 setIsPopUpOpen(!isPopUpOpen)

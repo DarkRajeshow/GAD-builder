@@ -76,14 +76,32 @@ export const renameAttributeAPI = async (id, body) => {
   return apiRequest('patch', `/api/designs/${id}/attributes/rename`, body);
 };
 
-export const updateDesignAttributes = async (id, body) => {
+export const updateDesignAttributesAPI = async (id, body) => {
   return apiRequest('patch', `/api/designs/${id}/attributes/update`, body);
 };
 
 
-export const deleteDesignAttributes = async (id, body) => {
+export const deleteDesignAttributesAPI = async (id, body) => {
   return apiRequest('patch', `/api/designs/${id}/attributes/delete`, body);
 };
+
+
+
+
+
+
+
+//pages
+export const addNewPageAPI = async (id, body) => {
+  return apiRequest('patch', `/api/designs/${id}/pages/add`, body);
+};
+
+
+
+
+
+
+
 
 
 

@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 
 import path from 'path';
 import fs from 'fs';
+import fsExtra from 'fs-extra'
 const __dirname = path.resolve();
 
 
@@ -25,9 +26,10 @@ export const createEmptyDesign = async (req, res, next) => {
             designInfo,
             folder,
             structure,
+            selectedPage
         } = req.body;
 
-        if (!folder || !designType || !designInfo || !structure || !selectedCategory) {
+        if (!folder || !designType || !designInfo || !structure || !selectedCategory || !selectedPage) {
             return res.json({ success: false, status: 'Something went wrong.' });
         }
 
@@ -42,6 +44,7 @@ export const createEmptyDesign = async (req, res, next) => {
             designInfo,
             selectedCategory,
             folder,
+            selectedPage,
             structure,
         });
         await design.save();
@@ -81,8 +84,8 @@ export const addNewAttribute = async (req, res, next) => {
             return res.json({ success: false, status: 'Update attributes is missing.' });
         }
 
-        if (!req.file) {
-            return res.json({ success: false, status: 'SVG Customization File is a required field.' });
+        if (!req.files || req.files.length === 0) {
+            return res.json({ success: false, status: 'PDF/SVG Customization File is a required field.' });
         }
 
         const design = await Design.findById(designId);
@@ -128,8 +131,9 @@ export const uploadBaseDrawing = async (req, res, next) => {
             return res.json({ success: false, status: 'Update attributes or selectedCategory is missing.' });
         }
 
-        if (!req.file) {
-            return res.json({ success: false, status: 'Base SVG Customization File is a required field.' });
+
+        if (!req.files || req.files.length === 0) {
+            return res.json({ success: false, status: 'Base PDF/SVG File is a required field.' });
         }
 
         const design = await Design.findById(designId);
@@ -142,7 +146,7 @@ export const uploadBaseDrawing = async (req, res, next) => {
         if (design.user.toString() !== userId) {
             return res.json({ success: false, status: 'You are not authorized.' });
         }
-        
+
         design.selectedCategory = selectedCategory
         design.structure = parsedStructure;
         await design.save();
@@ -170,10 +174,10 @@ export const shiftToSelectedCategory = async (req, res, next) => {
 
         const designId = req.params.id;
 
-        const { selectedCategory } = req.body;
+        const { selectedCategory, structure, folderNames } = req.body;
 
-        if (!selectedCategory) {
-            return res.json({ success: false, status: 'Selected Category is missing.' });
+        if (!selectedCategory || !structure || !folderNames) {
+            return res.json({ success: false, status: 'Missing Data.' });
         }
 
         const design = await Design.findById(designId);
@@ -186,12 +190,27 @@ export const shiftToSelectedCategory = async (req, res, next) => {
             return res.json({ success: false, status: 'You are not authorized.' });
         }
 
+        const baseDir = path.join(__dirname, '..', 'server', 'public', 'uploads', design?.folder); // Base folder where the folders are stored
+
+        // Loop through each folder name and delete it
+        for (const folderName of folderNames) {
+            const folderPath = path.join(baseDir, folderName);
+            // Check if the folder exists
+            if (fsExtra.existsSync(folderPath)) {
+                await fsExtra.remove(folderPath); // Delete the folder and its contents
+                console.log(`Deleted folder: ${folderName}`);
+            } else {
+                console.log(`Folder does not exist: ${folderName}`);
+            }
+        }
+
         design.selectedCategory = selectedCategory
+        design.structure = structure
         await design.save();
 
         return res.json({
             success: true,
-            status: `Shifted to ${selectedCategory}.`,
+            status: `Updated Pages & Shifted to ${selectedCategory}.`,
             id: design._id
         });
     } catch (error) {
@@ -356,6 +375,49 @@ export const deleteAttributes = async (req, res) => {
 };
 
 
+export const addNewPage = async (req, res) => {
+    try {
+        if (!req.cookies.jwt) {
+            return res.json({ success: false, status: 'Login to add new Design.' });
+        }
+
+        const decodedToken = jwt.verify(req.cookies.jwt, process.env.JWT_SECRET);
+        const userId = decodedToken.userId;
+
+        const designId = req.params.id;
+
+        const { structure } = req.body;
+
+        if (!structure) {
+            return res.json({ success: false, status: 'Sorry, Updated structure is missing.' });
+        }
+
+        const design = await Design.findById(designId);
+        if (!design) {
+            return res.json({ success: false, status: 'unfortunately, Design you are looking for not available.' });
+        }
+
+
+        if (design.user.toString() !== userId) {
+            return res.json({ success: false, status: 'You are not authorized.' });
+        }
+
+        design.structure = structure;
+        await design.save();
+
+        res.json({
+            success: true,
+            status: 'New Page Added.',
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.json({ success: false, status: 'Internal server problem.' });
+    }
+};
+
+
+
 // PATCH /api/designs/id/attributes/update - to update(rename, change file, delete sub-attributes) perticular attribute
 export const updateUnParsedAttributes = async (req, res) => {
     try {
@@ -388,7 +450,7 @@ export const updateUnParsedAttributes = async (req, res) => {
 
         design.structure = parsedStructure;
         await design.save();
-        
+
 
         res.json({
             success: true,

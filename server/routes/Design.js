@@ -1,6 +1,7 @@
 import express from "express";
 import {
     addNewAttribute,
+    addNewPage,
     addNewParentAttribute,
     createEmptyDesign,
     deleteAttributes,
@@ -23,22 +24,25 @@ const router = express.Router();
 // ---- >>>> POST requests
 router.post("/", createEmptyDesign);
 
+
 // --- >>>> PATCH requests
 
 //attribute operations 
 //1. add attributes
 //optimized 2
-router.patch("/:id/attributes/option", upload.single('svgFile'), handlePDFConversion, optimizeSVG, addNewAttribute);
-router.patch("/:id/attributes/base", upload.single('svgFile'), handlePDFConversion, optimizeSVG, uploadBaseDrawing);
+router.patch("/:id/attributes/option", upload.array('files'), handlePDFConversion, optimizeSVG, addNewAttribute);
+router.patch("/:id/attributes/base", upload.array('files'), handlePDFConversion, optimizeSVG, uploadBaseDrawing);
 router.patch("/:id/attributes/shift", shiftToSelectedCategory);
 router.patch("/:id/attributes/parent", addNewParentAttribute);
+
+
+router.patch("/:id/pages/add", addNewPage)
 
 //2. update attributes
 router.patch("/:id/attributes/rename", renameAttributes);
 
 //optimized 1
 router.patch("/:id/attributes/update", upload.array('files'), handlePDFConversion, optimizeSVG, updateUnParsedAttributes);
-
 router.patch("/:id/attributes/delete", deleteAttributes);
 
 

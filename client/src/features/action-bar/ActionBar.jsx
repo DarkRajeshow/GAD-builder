@@ -2,22 +2,22 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LucideEllipsisVertical } from 'lucide-react';
-import { popUpQuestions } from '../../constants/constants';
+import { popUpQuestions } from '../../constants';
 import { shiftToSelectedCategoryAPI } from '../../utility/api';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogContent, AlertDialogTrigger } from '../../components/ui/Dialog';
 import AddForm from './AddForm';
-import RenameForm from './RenameForm';
-import DeleteForm from './DeleteForm';
-import UpdateForm from './UpdateForm';
+import RenameForm from '../edit-menu/RenameForm';
+import DeleteForm from '../edit-menu/DeleteForm';
+import UpdateForm from '../edit-menu/UpdateForm';
 import ExportForm from './ExportForm';
-import ContextMenuOptions from './ContextMenuOptions';
+import EditMenu from '../edit-menu/EditMenu';
 import useStore from '../../store/useStore';
 import RenderOptions from './RenderOptions';
 
 
 const MemoizedRenderOptions = memo(RenderOptions);
-const MemoizedContextMenuOptions = memo(ContextMenuOptions);
+const MemoizedEditMenu = memo(EditMenu);
 
 function ActionBar({ generatePDF }) {
 
@@ -31,7 +31,6 @@ function ActionBar({ generatePDF }) {
     const [oldAttributeFileName, setOldAttributeFileName] = useState('');
     const [menuVisible, setMenuVisible] = useState(false);
     const [attributeType, setAttributeType] = useState("normal");
-    const [newCustomizationFile, setNewCustomizationFile] = useState();
     const [infoOpen, setInfoOpen] = useState(false)
     const [tempSelectedCategory, setTempSelectedCategory] = useState(selectedCategory)
     const [tempDesignAttributes, setTempDesignAttributes] = useState(designAttributes);
@@ -302,7 +301,7 @@ function ActionBar({ generatePDF }) {
                 )}
                 {(menuVisible === attribute) && (
                     <div className="absolute -right-[40px] border border-gray-300 rounded-lg mt-1 bg-white z-30 min-w-max">
-                        <MemoizedContextMenuOptions setDialogType={setDialogType} attributeOption={menuVisible} />
+                        <MemoizedEditMenu setDialogType={setDialogType} attributeOption={menuVisible} />
                     </div>
                 )}
             </div>
@@ -382,9 +381,7 @@ function ActionBar({ generatePDF }) {
                             setAttributeFileName={setAttributeFileName}
                             newAttributeTypes={newAttributeTypes}
                             setAttributeType={setAttributeType}
-                            newCustomizationFile={newCustomizationFile}
                             tempDesignAttributes={tempDesignAttributes}
-                            setNewCustomizationFile={setNewCustomizationFile}
                         />
                     )}
                     {dialogType === 'rename' && <RenameForm />}

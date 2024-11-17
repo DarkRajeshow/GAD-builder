@@ -11,16 +11,28 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "../../components/ui/Dialog"
+import { useMemo } from 'react';
+import { useEffect } from 'react';
+import { checkFileExists } from '../../utility/checkFileExists';
+import { useCallback } from 'react';
+import { toast } from 'sonner';
+import { addNewPageAPI } from '../../utility/api';
+import { useParams } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
+
 
 // import LeaderArrowText from './LoaderArrowText';
 
 function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
-    const { designAttributes, design, loading, setSelectionBox, fileVersion, baseDrawing } = useStore();
+    const { designAttributes, design, loading, setSelectionBox, fileVersion, baseDrawing, selectedPage, setSelectedPage, pages, generateStructure, fetchProject } = useStore();
 
+    const { id } = useParams()
     const [isDragging, setIsDragging] = useState(false);
     const [fileName, setFileName] = useState("")
+    const [newPageName, setNewPageName] = useState("")
 
-    const [openExport, setOpenExport] = useState(false)
+    const [viewPopUpType, setViewPopUpType] = useState('')
+    const [isPopUpON, setIsPopUpON] = useState(false)
 
     const [absoluteSelection, setAbsoluteSelection] = useState(null)
     const [selectionState, setSelectionState] = useState({
@@ -115,14 +127,56 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
         }
     };
 
+    const addNewPage = async (e) => {
+        e.preventDefault();
+        const pageExists = Object.keys(pages).some(pageName =>
+            pageName.toLocaleLowerCase() === newPageName.toLocaleLowerCase()
+        );
+
+        if (pageExists) {
+            toast.warning('Page already Exist.')
+            return;
+        }
+
+
+        try {
+            const updatedPages = {
+                ...pages,
+                [newPageName]: uuidv4()
+            }
+
+            let structure = generateStructure({ updatedPages })
+
+            const body = {
+                structure: structure
+            }
+
+            const { data } = await addNewPageAPI(id, body);
+
+            if (data.success) {
+                toast.success(data.status);
+                await fetchProject(id)
+                setViewPopUpType('')
+                setIsPopUpON(false)
+            }
+            else {
+                console.log(data);
+                toast.error(data.status);
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error('Something went wrong.')
+        }
+    }
+
     const handleMouseUp = () => {
         setIsDragging(false);
     };
 
-    const getSVGPath = (value) => {
+    const getSVGPath = useCallback((value) => {
         if (typeof value !== 'object') return null;
 
-        const baseFilePath = `${filePath}${design.folder}`;
+        const baseFilePath = `${filePath}${design.folder}/${pages[selectedPage]}`;
 
         if (value.value && value.path) {
             return `${baseFilePath}/${value.path}.svg?v=${fileVersion}`;
@@ -144,15 +198,44 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
         }
 
         return null;
-    };
+    }, [design.folder, fileVersion, pages, selectedPage]);
+
+    const [existingFiles, setExistingFiles] = useState({});
+
+    // Generate file paths and log them for debugging
+    const filePaths = useMemo(() => {
+        const paths = Object.values(designAttributes)
+            .map((value) => getSVGPath(value))
+            .filter(Boolean);
+        return paths;
+    }, [designAttributes, getSVGPath]);
+
+    useEffect(() => {
+        const fetchFileExistence = async () => {
+            const results = {};
+            for (const path of filePaths) {
+                // Only check if not already in `existingFiles`
+                if (!(path in existingFiles)) {
+                    results[path] = await checkFileExists(path);
+                }
+            }
+            setExistingFiles((prev) => ({ ...prev, ...results }));
+        };
+
+        if (filePaths.length > 0) {
+            fetchFileExistence();
+        }
+    }, [filePaths, existingFiles]);
+
 
     return (
-        <AlertDialog open={openExport}>
+        <AlertDialog open={isPopUpON}>
             <AlertDialogContent className="bg-theme max-h-[80vh] w-auto overflow-y-scroll p-6">
-                <form onSubmit={(e) => {
+                {viewPopUpType === 'export' && <form onSubmit={(e) => {
                     e.preventDefault();
                     generatePDF(fileName);
-                    setOpenExport(false)
+                    setViewPopUpType('')
+                    setIsPopUpON(false)
                     setSelectionState({
                         isSelecting: false,
                         isConfirmed: false,
@@ -165,7 +248,7 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                 }}
                     className='flex flex-col gap-2'>
                     <AlertDialogTitle className="text-dark font-medium py-2">Export File as</AlertDialogTitle>
-                    <AlertDialogTrigger className='absolute top-3 right-3 shadow-none'>
+                    <AlertDialogTrigger id='trigger' className='absolute top-3 right-3 shadow-none'>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                         </svg>
@@ -187,7 +270,34 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                         />
                     </AlertDialogDescription>
                     <button type='submit' className='bg-blue-300 hover:bg-green-300 py-2 px-3 rounded-full text-dark font-medium mt-4'>Export as PDF</button>
-                </form>
+                </form>}
+
+                {viewPopUpType === 'pages' && <form onSubmit={addNewPage}
+                    className='flex flex-col gap-2'>
+                    <AlertDialogTitle className="text-dark font-medium py-2">Add New Page</AlertDialogTitle>
+                    <button onClick={() => setIsPopUpON(false)} className='absolute top-3 right-3 shadow-none'>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <AlertDialogDescription className='group cursor-text bg-theme/40 py-2 focus-within:bg-theme/60 rounded-md flex items-center justify-center gap-2 px-2'>
+                        <label htmlFor='pageName' className=' p-2 bg-dark/5 rounded-md'>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6  text-dark/60 group-hover:text-dark h-full">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                            </svg>
+                        </label>
+                        <input
+                            id='pageName'
+                            required
+                            type="text"
+                            value={newPageName}
+                            onChange={(e) => setNewPageName(e.target.value)}
+                            className="focus:bg-transparent bg-transparent h-full mt-0 w-full outline-none py-3 px-4"
+                            placeholder="e.g T Box"
+                        />
+                    </AlertDialogDescription>
+                    <button type='submit' className='bg-blue-300 hover:bg-green-300 py-2 px-3 rounded-full text-dark font-medium mt-4'>Add</button>
+                </form>}
             </AlertDialogContent>
 
             <main className='h-[89vh] flex flex-col gap-1' ref={containerRef}>
@@ -216,31 +326,28 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                                     transformOrigin: 'center',
                                     cursor: isDragging ? 'grabbing' : 'grab'
                                 }}
-                                href={`${filePath}${design.folder}/${baseDrawing?.path}.svg?v=${fileVersion}`}
+                                href={`${filePath}${design.folder}/${pages[selectedPage]}/${baseDrawing?.path}.svg?v=${fileVersion}`}
                                 height={window.innerHeight * 0.846}
                                 width={window.innerWidth - 32}
                             />}
                             {designAttributes && Object.entries(designAttributes).map(([attribute, value]) => {
-
-                                console.log(attribute + " : " + (value?.value || ((value?.selectedOption && value?.selectedOption !== "none" && !value?.options?.[value?.selectedOption]?.options) || (value?.options && value?.options[value?.selectedOption]?.selectedOption && value?.options[value?.selectedOption].selectedOption !== ' ')) ? "passed" : "failed") + " " + getSVGPath(value));
-
+                                const href = getSVGPath(value)
                                 const isValid = value?.value
                                     || (value?.selectedOption && value.selectedOption !== "none"
                                         && !value?.options?.[value.selectedOption]?.options)
                                     || (value?.options?.[value?.selectedOption]?.selectedOption
                                         && value.options[value.selectedOption].selectedOption !== ' ');
 
-
                                 return (
                                     (
-                                        (isValid) && <image
+                                        (isValid && existingFiles[href]) && <image
                                             style={{
                                                 transform: `scale(${zoom}) translate(${offset.x}px, ${offset.y}px)`,
                                                 transformOrigin: 'center',
                                                 cursor: isDragging ? 'grabbing' : 'grab'
                                             }}
                                             key={attribute}
-                                            href={`${getSVGPath(value)}`}
+                                            href={href}
                                             height={window.innerHeight * 0.846}
                                             width={window.innerWidth - 32}
                                         />
@@ -273,7 +380,8 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                                 </svg>
                                 <button onClick={() => {
-                                    setOpenExport(true)
+                                    setViewPopUpType('export')
+                                    setIsPopUpON(true)
                                 }} id='exportBtn' className='bg-red-200 hover:bg-green-300 py-2 rounded-full px-4 text-xs text-dark font-medium flex items-center gap-2'>
                                     PDF
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4">
@@ -284,8 +392,27 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                         </div>
                     )}
                 </div>
-                <div className="select-none h-[7%] flex justify-between items-center mx-6 px-2 bg-white rounded-lg ">
-                    <p>Footer</p>
+                <div className="select-none h-[7%] flex justify-between items-center mx-6 px-2 bg-white rounded-lg">
+                    <div className='flex gap-2 items-center'>
+                        <p className='font-medium text-sm'>Pages</p>
+                        <div className='flex pl-2 gap-2'>
+                            {Object.keys(pages).map((page) => (
+                                <div onClick={() => {
+                                    setSelectedPage(page)
+                                }} className={`py-1 px-2 bg-zinc-100 cursor-pointer uppercase text-sm font-medium border-2 border-transparent ${selectedPage === page && 'border-zinc-500'}`} key={page}>
+                                    {page}
+                                </div>
+                            ))}
+                        </div>
+                        {Object.keys(pages).length <= 8 && <svg
+                            onClick={() => {
+                                setViewPopUpType('pages')
+                                setIsPopUpON(true)
+                            }}
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-8 w-8 p-1 rounded-full border-zinc-600 hover:border-black border transition-all cursor-pointer">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>}
+                    </div>
                     <div className='flex items-center justify-center gap-2'>
                         <Slider
                             max={600}

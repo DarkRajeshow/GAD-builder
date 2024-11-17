@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertDialogTitle, AlertDialogTrigger } from '@radix-ui/react-alert-dialog';
-import RenameInput from './RenameInput';
+import RenameInput from './update/RenameInput';
 import { renameAttributeAPI } from '../../utility/api';
 import { toast } from 'sonner';
 import { useParams } from 'react-router-dom';
@@ -62,9 +62,9 @@ const RenameForm = () => {
 
             renameAttribute(updatedAttributes, menuOf, newAttributeName);
 
-            
-            let structure = generateStructure(updatedAttributes)
-    
+
+            let structure = generateStructure({ updatedAttributes: updatedAttributes })
+
             const body = {
                 structure: structure
             }

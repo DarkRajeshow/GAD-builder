@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import useStore from '../../store/useStore';
 
-const RenderNestedOptions = ({ level, isNestedLevel2 = false, levelOneNest }) => {
+const DisplayOptions = ({ level, isNestedLevel2 = false, levelOneNest }) => {
 
     const { designAttributes } = useStore();
 
@@ -82,10 +82,10 @@ const RenderNestedOptions = ({ level, isNestedLevel2 = false, levelOneNest }) =>
     return null;
 };
 
-RenderNestedOptions.propTypes = {
+DisplayOptions.propTypes = {
     level: PropTypes.number.isRequired,
     isNestedLevel2: PropTypes.bool,
     levelOneNest: PropTypes.string,
 };
 
-export default RenderNestedOptions;
+export default DisplayOptions;

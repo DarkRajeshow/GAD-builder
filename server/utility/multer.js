@@ -10,8 +10,6 @@ const storage = multer.diskStorage({
         const filePathParts = file.originalname.split('<<&&>>');
         const pagefolder = filePathParts.length > 1 ? filePathParts[0] : ''; // Extract folder name
 
-        console.log(file.originalname);
-        
         const designFolder = req.body.folder || 'uploads'; // Default root folder if not specified
         const uploadPath = path.join(__dirname, '..', 'server', 'public', 'uploads', designFolder, pagefolder);
 
@@ -26,7 +24,6 @@ const storage = multer.diskStorage({
     filename: function (req, file, cb) {
 
         const ext = path.extname(file.originalname) || '.svg'; // Default to '.svg' if there's no extension
-        console.log("File name : " + file.originalname);
         const filePathParts = file.originalname.split('<<&&>>');
         const filename = filePathParts.length > 1 ? filePathParts.slice(1).join('') : file.originalname;
 

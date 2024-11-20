@@ -171,13 +171,7 @@ function ActionBar({ generatePDF }) {
     //     console.log("DesignAttributes");
     //     console.log(designAttributes);
     // }, [designAttributes]);
-
     
-    useEffect(() => {
-        console.log("tempDesignAttributes");
-        console.log(tempDesignAttributes);
-    }, [tempDesignAttributes]);
-
     useEffect(() => {
         setLevelOneNest("");
         setLevelTwoNest("");
@@ -231,7 +225,8 @@ function ActionBar({ generatePDF }) {
     const shiftCategory = async () => {
         try {
             const { data } = await shiftToSelectedCategoryAPI(id, {
-                selectedCategory: tempSelectedCategory
+                selectedCategory: tempSelectedCategory,
+                
             });
             if (data.success) {
                 toast.success(data.status);
@@ -362,13 +357,9 @@ function ActionBar({ generatePDF }) {
                             </div>
                         </div>}
                     </div>
-
-
-
-
                 </div>
 
-                <AlertDialogContent className={'bg-theme max-h-[80vh] w-auto overflow-y-scroll p-6'}>
+                <AlertDialogContent className={'bg-theme max-h-[80vh] w-auto overflow-y-scroll p-6 select-none'}>
                     {(dialogType === "add") && (
                         <AddForm
                             attributeFileName={attributeFileName}
@@ -384,8 +375,8 @@ function ActionBar({ generatePDF }) {
                             tempDesignAttributes={tempDesignAttributes}
                         />
                     )}
-                    {dialogType === 'rename' && <RenameForm />}
                     {dialogType === 'update' && <UpdateForm />}
+                    {dialogType === 'rename' && <RenameForm />}
                     {dialogType === "delete" && <DeleteForm />}
                     {dialogType === "export" && <ExportForm generatePDF={generatePDF} />}
                 </AlertDialogContent>

@@ -122,12 +122,6 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
     }
 
 
-
-    useState(() => {
-        console.log(uniqueFileName);
-        console.log(newFiles);
-    }, [newFiles])
-
     return (
         <div id='add' className='w-full'>
             <div className='pl-3 ml-3 border-l-2 border-dark/10 my-2'>

@@ -33,7 +33,7 @@ function convertPDFtoSVG(inputPdfPath, outputSvgPath) {
 
 export const handlePDFConversion = (req, res, next) => {
     const files = req.files || [req.file]; // Support both single and multiple uploads
-    const conversionPromises = files.map(file => {
+    const conversionPromises = files.map(async (file) => {
         const filePath = path.join(file.destination, file.filename);
         const svgFilePath = path.join(file.destination, `${path.parse(file.filename).name}.svg`);
 

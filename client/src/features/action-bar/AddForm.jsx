@@ -7,7 +7,6 @@ import { handleClick, handleDragOver } from '../../utility/dragDrop'
 import useStore from '../../store/useStore';
 import { useState } from 'react';
 import DisplayOptions from './DisplayOptions';
-import { useEffect } from 'react';
 
 
 const AddForm = ({
@@ -71,7 +70,6 @@ const AddForm = ({
 
             for (const [folder, file] of Object.entries(newCustomizationFiles)) {
                 const customName = `${folder}<<&&>>${uniqueFileName}${file.name.slice(-4)}`; // Folder path + filename
-                console.log(customName);
                 formData.append('files', file, customName);
             }
 
@@ -125,11 +123,6 @@ const AddForm = ({
         document.getElementById("closeButton").click();
 
     };
-
-    useEffect(()=>{
-        console.log(newCustomizationFiles);
-        
-    }, [newCustomizationFiles])
 
     return (
         <form onSubmit={(e) => {
@@ -349,7 +342,7 @@ const AddForm = ({
                 {/* select pages you want to have file for */}
 
             </div>
-            <button type='submit' className='bg-green-200 hover:bg-green-300 py-2 px-3 rounded-full text-dark font-medium mt-4 relative flex items-center justify-center'>
+            <button disabled={(attributeType !== "nestedParentLevel0" && attributeType !== "nestedParentLevel1") && selectedPages.length === 0} type='submit' className='bg-green-200 hover:bg-green-300 py-2 px-3 rounded-full text-dark font-medium mt-4 relative flex items-center justify-center'>
                 <div>{addAttributeLoading ? "Creating..." : "Create"}</div>
                 {addAttributeLoading && <div className='absolute right-4  h-4 w-4 rounded-full border-r-transparent border-2 border-black animate-spin' />}
             </button>

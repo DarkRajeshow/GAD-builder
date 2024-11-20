@@ -33,13 +33,13 @@ function SideMenu() {
     const [newPageName, setNewPageName] = useState('')
     const [choosenPage, setChoosenPage] = useState('gad')
     const [fileExistenceStatus, setFileExistenceStatus] = useState({});
-
+    const [openPageDeleteWarning, setOpenPageDeleteWarning] = useState('');
     const { id } = useParams();
+
+
 
     // Function to handle file selection
     const handleFileChange = (e) => {
-        console.log(e.target.files);
-
         setNewBaseDrawingFiles({
             ...newBaseDrawingFiles,
             [tempPages[choosenPage]]: e.target.files[0]
@@ -72,9 +72,10 @@ function SideMenu() {
                 }
                 return count
             }, 0)
+
             const newFileUploadCount = newBaseDrawingFiles ? Object.keys(newBaseDrawingFiles).length : 0
 
-            if (((newFileUploadCount + fileUploadCount) !== Object.keys(tempPages).length)) {
+            if (((newFileUploadCount + fileUploadCount) < Object.keys(tempPages).length)) {
                 toast.warning("You must upload the base drawing for all the pages to proceed.")
                 setSaveLoading(false)
                 return
@@ -83,13 +84,26 @@ function SideMenu() {
             else if (!newBaseDrawingFiles) {
                 try {
 
+                    let changedPages;
+                    // Conditional assignment based on design type
+                    if (design?.designType === "motor") {
+                        changedPages = design.structure.mountingTypes[tempSelectedCategory].pages;
+                    } else if (design?.designType === "smiley") {
+                        changedPages = design.structure.sizes[tempSelectedCategory].pages;
+                    }
+
+
+                    console.log(changedPages);
+
+
                     let structure = generateStructure({
                         updatedCategory: tempSelectedCategory,
-                        updatedPages: tempPages
+                        updatedPages: tempPages,
+                        updatedBaseDrawing: tempBaseDrawing
                     })
 
 
-                    const pagesNames = Object.keys(pages).filter((page) => !tempPages[page])
+                    const pagesNames = Object.keys(changedPages).filter((page) => !tempPages[page])
 
                     const folderNames = pagesNames.map((page) => pages[page])
 
@@ -104,8 +118,6 @@ function SideMenu() {
                         setNewBaseDrawingFiles();
                         await fetchProject(id);
                         setSideMenuType("")
-
-                        // document.getElementById("closeButtonSideMenu").click();
                         setIsPopUpOpen(false)
                     } else {
                         toast.error(data.status);
@@ -146,6 +158,20 @@ function SideMenu() {
 
                 // console.log(`${uniqueFileName.slice(0, uniqueFileName.length - 4)}.svg`);
 
+
+                let changedPages;
+                // Conditional assignment based on design type
+                if (design?.designType === "motor") {
+                    changedPages = design.structure.mountingTypes[tempSelectedCategory].pages;
+                } else if (design?.designType === "smiley") {
+                    changedPages = design.structure.sizes[tempSelectedCategory].pages;
+                }
+
+
+                const pagesNames = Object.keys(changedPages).filter((page) => !tempPages[page])
+
+                const folderNames = pagesNames.map((page) => pages[page])
+
                 let structure = generateStructure({
                     updatedAttributes: attributes,
                     updatedBaseDrawing: {
@@ -157,14 +183,16 @@ function SideMenu() {
 
                 //tempDesignAttributes is a object
                 formData.append('selectedCategory', tempSelectedCategory)
+                formData.append('folderNames', folderNames);
+
+                //we need to stringify the object as objects are not awailable in formData as a datatype
                 formData.append('structure', JSON.stringify(structure));
 
+                console.log(structure);
 
 
                 for (const [folder, file] of Object.entries(newBaseDrawingFiles)) {
                     const customName = `${folder}<<&&>>${uniqueFileName}${file.name.slice(-4)}`; // Folder path + filename
-                    console.log(customName);
-
                     formData.append('files', file, customName);
                 }
 
@@ -196,24 +224,51 @@ function SideMenu() {
 
     };
 
+    const openDeleteConfirmation = (pageName) => {
+        if (fileExistenceStatus[pageName]) {
+            setOpenPageDeleteWarning(pageName)
+            return;
+        }
+        let updatedTempPages = { ...tempPages }
+        delete updatedTempPages[pageName]
+        if (choosenPage === pageName) {
+            setChoosenPage('gad')
+        }
+        setTempPages(updatedTempPages)
+    }
+
+    const handleDelete = () => {
+        let updatedTempPages = { ...tempPages }
+        delete updatedTempPages[openPageDeleteWarning]
+        if (choosenPage === openPageDeleteWarning) {
+            setChoosenPage('gad')
+        }
+        setTempPages(updatedTempPages)
+        setOpenPageDeleteWarning('')
+    }
+
+
     const toggleDialog = () => {
         document.getElementById("closeButtonSideMenu").click();
     }
 
     const baseFilePath = `${filePath}${design.folder}`;
 
-
     useEffect(() => {
         setTempBaseDrawing(baseDrawing);
+    }, [baseDrawing])
 
-        if (!loading && baseDrawing === " ") {
-            setIsPopUpOpen(true);
-        }
+    useEffect(() => {
+        setTempSelectedCategory(selectedCategory)
+    }, [selectedCategory])
 
+    useEffect(() => {
+        console.log(`${tempBaseDrawing?.path}.svg`);
         const checkFilesExistence = async () => {
             const results = await Promise.all(
                 Object.entries(tempPages).map(async ([pageFolder]) => {
-                    const exists = await checkFileExists(`${baseFilePath}/${tempPages[pageFolder]}/${baseDrawing?.path}.svg`);
+
+                    const exists = await checkFileExists(`${baseFilePath}/${tempPages[pageFolder]}/${tempBaseDrawing?.path}.svg`);
                     return { [pageFolder]: exists };
                 })
             );
@@ -221,28 +276,19 @@ function SideMenu() {
             // Convert array of objects to a single object with pageFolder as keys
             const statusObject = results.reduce((acc, curr) => ({ ...acc, ...curr }), {});
 
-            console.log(statusObject); // Log the result object to check status by pageFolder
-
             // Update state with the full object
             setFileExistenceStatus(statusObject);
+
+            console.log(statusObject);
 
             // Check if any file is missing to open the popup
             if (Object.values(statusObject).some((exists) => !exists)) {
                 setIsPopUpOpen(true);
             }
         };
+        checkFilesExistence();
 
-        if (baseDrawing && !loading) {
-            checkFilesExistence();
-        }
-    }, [baseDrawing, loading, tempPages, baseFilePath]);
-
-
-
-
-    useEffect(() => {
-        setTempSelectedCategory(selectedCategory)
-    }, [selectedCategory])
+    }, [tempBaseDrawing, tempPages, baseFilePath]);
 
 
     useEffect(() => {
@@ -252,6 +298,7 @@ function SideMenu() {
 
     useEffect(() => {
         setNewBaseDrawingFiles()
+        setChoosenPage('gad')
     }, [tempSelectedCategory])
 
 
@@ -259,7 +306,7 @@ function SideMenu() {
 
     return (
         <AlertDialog open={isPopUpOpen}>
-            <div className="absolute select-none w-12 rounded-full flex items-center flex-col bg-white border-2 -translate-y-1/2 top-1/2 left-10 z-40 p-1 gap-1">
+            <div className="absolute select-none w-12 rounded-full flex items-center flex-col bg-white backdrop-blur-lg border-2 -translate-y-1/2 top-1/2 left-10 z-40 p-1 gap-1">
                 {sideMenuTypes.map((type, index) => (
                     <AlertDialogTrigger onClick={() => {
                         setSideMenuType(type.value)
@@ -308,8 +355,11 @@ function SideMenu() {
 
                                         //designTypeCode
 
+                                        console.log(design?.designType);
+                                        
                                         if (design?.designType === "motor") {
-                                            setTempBaseDrawing(structure.mountingTypes[e.target.value].baseDrawing)
+
+                                            setTempBaseDrawing(structure?.mountingTypes[e.target.value]?.baseDrawing)
                                             setTempPages(structure?.mountingTypes[e.target.value]?.pages || [])
 
                                         }
@@ -360,26 +410,27 @@ function SideMenu() {
                                 <p className='font-medium mb-3 capitalize'>pages</p>
                                 <div className="grid grid-cols-3 gap-2">
                                     {Object.keys(tempPages).map((pageName) => (
-                                        <div key={pageName} className={`text-center px-4 uppercase font-medium cursor-pointer relative border ${fileExistenceStatus[pageName] ? "bg-exists/30": "bg-notExists/20" } ${choosenPage === pageName ? 'border-black' : 'border-transparent'}`}>
+                                        <div key={pageName} className={`text-center px-4 uppercase transition-none font-medium cursor-pointer relative border ${fileExistenceStatus[pageName] ? "bg-exists/30" : "bg-notExists/20"} ${choosenPage === pageName ? 'border-black' : 'border-transparent'}`}>
                                             <p className="mx-4 py-3" onClick={() => {
                                                 setChoosenPage(pageName)
                                             }}>
                                                 {pageName}
                                             </p>
 
-                                            {pageName !== 'gad' && <svg onClick={() => {
-                                                let updatedTempPages = { ...tempPages }
-                                                delete updatedTempPages[pageName]
-                                                if (choosenPage === pageName) {
-                                                    setChoosenPage('gad')
-                                                }
-                                                setTempPages(updatedTempPages)
-                                            }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 rounded-full cursor-pointer transition-all absolute right-2 top-2 text-red-700">
+                                            {pageName !== 'gad' && <svg onClick={() => openDeleteConfirmation(pageName)} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 rounded-full cursor-pointer transition-all absolute right-2 top-2 text-red-700">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                                             </svg>}
                                         </div>
                                     ))}
+
                                 </div>
+                                {openPageDeleteWarning && <div className='rounded-lg bg-red-50 border-red-300/40 border overflow-hidden py-4 px-4 flex flex-col gap-3 mt-4'>
+                                    <h1 className='font-medium'>If you delete the page `{openPageDeleteWarning}`, all associated files will also be deleted. Are you sure you want to continue?</h1>
+                                    <div className='flex items-center justify-start gap-2'>
+                                        <button onClick={handleDelete} type='button' className='bg-red-300 hover:bg-red-400 border hover:border-black transition-all font-normal py-1.5 px-4 rounded-full'>Yes</button>
+                                        <button onClickCapture={() => setOpenPageDeleteWarning('')} type='button' className='bg-white hover:bg-blue-50 border hover:border-black font-normal py-1.5 px-4 rounded-full'>No</button>
+                                    </div>
+                                </div>}
                             </div>
                         </div>
 

@@ -10,6 +10,7 @@ const createDesignSlice = (set) => ({
     updatedAttributes: {},
     pages: [],
     selectedPage: 'gad',
+    rotation: 0,
     // updatedValue: { value: {}, version: 0 },
 
 
@@ -22,7 +23,7 @@ const createDesignSlice = (set) => ({
     setUpdatedAttributes: (attributes) => set({ updatedAttributes: attributes }),
     setPages: (updatedPages) => set({ pages: updatedPages }),
     setSelectedPage: (page) => set({ selectedPage: page }),
-
+    setRotation: (updatedRotation) => set({ rotation: updatedRotation })
 
     // setUpdatedValue: (newValue) =>
     //     set((state) => ({ updatedValue: { value: newValue, version: state.updatedValue.version + 1 } })),

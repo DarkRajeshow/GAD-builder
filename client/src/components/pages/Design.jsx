@@ -74,7 +74,7 @@ const Design = () => {
         } catch (error) {
             console.error('Error generating PDF:', error);
         }
-    }, [selectionBox, zoom, offset]);
+    }, [selectionBox, zoom, offset]); 
 
 
     return (

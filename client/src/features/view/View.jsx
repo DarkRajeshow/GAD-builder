@@ -24,7 +24,7 @@ import { v4 as uuidv4 } from 'uuid';
 // import LeaderArrowText from './LoaderArrowText';
 
 function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
-    const { designAttributes, design, loading, setSelectionBox, fileVersion, baseDrawing, selectedPage, setSelectedPage, pages, generateStructure, fetchProject } = useStore();
+    const { designAttributes, design, loading, setSelectionBox, fileVersion, baseDrawing, selectedPage, setSelectedPage, pages, generateStructure, fetchProject, rotation, setRotation } = useStore();
 
     const { id } = useParams()
     const [isDragging, setIsDragging] = useState(false);
@@ -33,6 +33,7 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
 
     const [viewPopUpType, setViewPopUpType] = useState('')
     const [isPopUpON, setIsPopUpON] = useState(false)
+    const [isBaseDrawingExists, setIsBaseDrawingExists] = useState(false)
 
     const [absoluteSelection, setAbsoluteSelection] = useState(null)
     const [selectionState, setSelectionState] = useState({
@@ -42,6 +43,10 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
         selection: null,
     });
     const containerRef = useRef(null);
+    const rotateSVG = () => {
+        const newRotation = (rotation + 90) % 360; // Increment rotation by 90°
+        setRotation(newRotation);
+    };
 
     const handleWheel = (event) => {
         setZoom(prevZoom => Math.min(Math.max(prevZoom + event.deltaY * -0.001, 0.2), 6));
@@ -99,10 +104,18 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
             const dx = event.clientX - selectionState.lastMousePosition.x;
             const dy = event.clientY - selectionState.lastMousePosition.y;
 
-            // after
-            setOffset(prevOffset => ({ x: prevOffset.x + (dx / zoom), y: prevOffset.y + (dy / zoom) }));
+            // Convert the movement to account for rotation
+            const angleRad = (rotation * Math.PI) / 180; // Convert degrees to radians
+            const adjustedDx = dx * Math.cos(angleRad) + dy * Math.sin(angleRad);
+            const adjustedDy = -dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
 
-            setSelectionState(prevState => ({
+            // Update the offset with adjusted values
+            setOffset((prevOffset) => ({
+                x: prevOffset.x + adjustedDx / zoom,
+                y: prevOffset.y + adjustedDy / zoom,
+            }));
+
+            setSelectionState((prevState) => ({
                 ...prevState,
                 lastMousePosition: { x: event.clientX, y: event.clientY },
             }));
@@ -115,8 +128,8 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                 ...prev,
                 endX: event.clientX,
                 endY: event.clientY,
-            }))
-            setSelectionState(prevState => ({
+            }));
+            setSelectionState((prevState) => ({
                 ...prevState,
                 selection: {
                     ...prevState.selection,
@@ -126,6 +139,7 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
             }));
         }
     };
+
 
     const addNewPage = async (e) => {
         e.preventDefault();
@@ -227,6 +241,16 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
         }
     }, [filePaths, existingFiles]);
 
+    useEffect(() => {
+        const checkBaseFileExistance = async (path) => {
+            const result = await checkFileExists(path);
+            setIsBaseDrawingExists(result)
+        };
+        if (baseDrawing?.path) {
+
+            checkBaseFileExistance(`${filePath}${design.folder}/${pages[selectedPage]}/${baseDrawing?.path}.svg`)
+        }
+    }, [baseDrawing, pages, selectedPage, design.folder])
 
     return (
         <AlertDialog open={isPopUpON}>
@@ -320,11 +344,12 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                             viewBox={`0 0 ${window.innerWidth - 32} ${window.innerHeight * 0.846}`}
                             xmlns="http://www.w3.org/2000/svg"
                         >
-                            {baseDrawing?.path && <image
+                            {(baseDrawing?.path && isBaseDrawingExists) && <image
                                 style={{
                                     transform: `scale(${zoom}) translate(${offset.x}px, ${offset.y}px)`,
                                     transformOrigin: 'center',
-                                    cursor: isDragging ? 'grabbing' : 'grab'
+                                    cursor: isDragging ? 'grabbing' : 'grab',
+                                    rotate: `${rotation}deg`,
                                 }}
                                 href={`${filePath}${design.folder}/${pages[selectedPage]}/${baseDrawing?.path}.svg?v=${fileVersion}`}
                                 height={window.innerHeight * 0.846}
@@ -344,7 +369,8 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                                             style={{
                                                 transform: `scale(${zoom}) translate(${offset.x}px, ${offset.y}px)`,
                                                 transformOrigin: 'center',
-                                                cursor: isDragging ? 'grabbing' : 'grab'
+                                                cursor: isDragging ? 'grabbing' : 'grab',
+                                                rotate: `${rotation}deg`
                                             }}
                                             key={attribute}
                                             href={href}
@@ -409,11 +435,17 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                                 setViewPopUpType('pages')
                                 setIsPopUpON(true)
                             }}
-                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-8 w-8 p-1 rounded-full border-zinc-600 hover:border-black border transition-all cursor-pointer">
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-8 w-8 p-1  hover:border-black border-2 transition-all cursor-pointer">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>}
                     </div>
+
                     <div className='flex items-center justify-center gap-2'>
+                        <button onClick={rotateSVG} title='View Only Rotation'>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3" />
+                            </svg>
+                        </button>
                         <Slider
                             max={600}
                             step={1}
@@ -422,7 +454,7 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                             onValueChange={(value) => setZoom(value / 100)}
                             className={cn("w-60 !transition-none")}
                         />
-                        <span className='text-sm font-medium'>{Math.round(zoom * 100)}%</span>
+                        <span className='text-sm font-medium w-10'>{Math.round(zoom * 100)}%</span>
                     </div>
                 </div>
             </main>

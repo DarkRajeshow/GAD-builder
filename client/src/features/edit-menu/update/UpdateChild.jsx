@@ -1,51 +1,85 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'sonner';
-import { handleDragOver } from '../../../utility/dragDrop';
+import { handleClick, handleDragOver } from '../../../utility/dragDrop';
 import filePath from '../../../utility/filePath';
 import AddChild from './AddChild';
 import useStore from '../../../store/useStore';
+import { checkFileExists } from '../../../utility/checkFileExists';
+import { useCallback } from 'react';
 
-function UpdateChild({ parentOption = "", nestedIn = "", setUpdatedValue, updatedValue, option, value }) {
+function UpdateChild({ parentOption = "", nestedIn = "", setUpdatedValue, updatedValue, option, value, fileCounts, setFileCounts }) {
+    const { design, newFiles, setNewFiles, pages, loading, filesToDelete, setFilesToDelete, deleteFilesOfPages, setDeleteFilesOfPages } = useStore();
+
     const [renamedOption, setRenamedOption] = useState(option);
-
     const [operation, setOperation] = useState("");
+    const [fileExistenceStatus, setFileExistenceStatus] = useState({});
+    const [selectedPages, setSelectedPages] = useState(['gad']);
 
-    const { design, newFiles, setNewFiles } = useStore();
-
-    const handleFileChange = (e, title) => {
-        setNewFiles({
-            ...newFiles,
-            [title]: e.target.files[0]
-        });
+    const handleFileChange = (e, setFiles, page) => {
+        if (e.target.files[0].type === 'image/svg+xml' || e.target.files[0].type === 'application/pdf') {
+            setFiles({
+                ...newFiles,
+                [value?.path]: {
+                    ...newFiles?.[value?.path],
+                    [pages[page]]: e.target.files[0]
+                },
+            });
+        }
+        else {
+            toast.error('Please choose a svg file.');
+        }
     };
 
-    const handleDrop = (e, title) => {
+    const handleDrop = (e, setFiles, page) => {
         e.preventDefault();
         if (e.dataTransfer.files[0].type === 'image/svg+xml' || e.dataTransfer.files[0].type === 'application/pdf') {
-            setNewFiles({
+            setFiles({
                 ...newFiles,
-                [title]: e.dataTransfer.files[0]
+                [value?.path]: {
+                    ...newFiles?.[value?.path],
+                    [pages[page]]: e.target.files[0]
+                },
             });
-        } else {
+        }
+        else {
             toast.error('Please choose a svg file.');
         }
     };
 
     const handleDelete = () => {
+        // deep copy
         const tempUpdateValue = JSON.parse(JSON.stringify(updatedValue));
 
         if (parentOption) {
             if (tempUpdateValue.options[parentOption].selectedOption === renamedOption) {
                 tempUpdateValue.options[parentOption].selectedOption = " ";
             }
+
+            if (value?.path) {
+                setFilesToDelete([...filesToDelete, value?.path])
+            }
+
             delete tempUpdateValue.options[parentOption].options[renamedOption];
         }
 
         else {
+            if (value?.path) {
+                setFilesToDelete([...filesToDelete, value?.path])
+            }
+
+            else if (value?.options) {
+                for (const subValue of Object.values(value?.options)) {
+                    if (subValue?.path) {
+                        setFilesToDelete([...filesToDelete, subValue?.path])
+                    }
+                }
+            }
+
             if (tempUpdateValue.selectedOption === renamedOption) {
                 tempUpdateValue.selectedOption = "none";
             }
+
             delete tempUpdateValue.options[renamedOption];
         }
         setUpdatedValue(tempUpdateValue);
@@ -86,9 +120,67 @@ function UpdateChild({ parentOption = "", nestedIn = "", setUpdatedValue, update
         setRenamedOption(newOptionName);
     };
 
-    const selectedFile = value?.path ? newFiles[value?.path] : null;
-
     const baseFilePath = `${filePath}${design.folder}`;
+
+
+    useEffect(() => {
+        const checkFilesExistence = async () => {
+            if (!value?.path) {
+                setFileExistenceStatus({});
+                return;
+            }
+
+            const alreadySelectedPages = [];
+
+            const results = await Promise.all(
+                Object.keys(pages).map(async (page) => {
+                    const exists = await checkFileExists(`${baseFilePath}/${pages[page]}/${value?.path}.svg`);
+                    if (exists) {
+                        alreadySelectedPages.push(page);
+                    }
+                    return { [page]: exists };
+                })
+            );
+
+            // Convert array of objects to a single object with pageFolder as keys
+            const statusObject = results.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+
+            // Update state with the full object
+            setFileExistenceStatus(statusObject);
+            setSelectedPages(alreadySelectedPages)
+        };
+
+        if (!loading) {
+            checkFilesExistence();
+        }
+    }, [loading, pages, baseFilePath, value?.path]);
+
+    const updateFileCount = useCallback(() => {
+        if (value?.path) {
+            const fileUploadCount = selectedPages.reduce((count, page) => {
+                const exists = fileExistenceStatus[page]
+                if (exists) {
+                    return count + 1
+                }
+                return count;
+            }, 0)
+
+            const newFileUploadCount = newFiles?.[value?.path] ? Object.keys(newFiles?.[value?.path]).length : 0
+
+            setFileCounts((prev) => ({
+                ...prev,
+                [option]: {
+                    fileUploads: (newFileUploadCount + fileUploadCount),
+                    selectedPagesCount: Object.keys(selectedPages).length
+                }
+            }))
+        }
+    }, [selectedPages, newFiles, value?.path, option, fileExistenceStatus, setFileCounts])
+
+    useEffect(() => {
+        updateFileCount()
+    }, [updateFileCount])
+
 
     if (nestedIn) {
         if (!updatedValue?.options[nestedIn]?.options[renamedOption]) {
@@ -101,7 +193,6 @@ function UpdateChild({ parentOption = "", nestedIn = "", setUpdatedValue, update
             return null;
         }
     }
-
 
 
     return (
@@ -145,51 +236,116 @@ function UpdateChild({ parentOption = "", nestedIn = "", setUpdatedValue, update
                                         />
                                     </div>
                                 </div>
-                                {(value?.path && option !== "none") && <div className='flex gap-2 w-full h-full items-center justify-between px-2 pt-8'>
-                                    <div className='blur-none w-full'>
-                                        <p className='pb-3 font-medium text-lg'>Change File</p>
-                                       
-                                        <div className='grid grid-cols-2 gap-4 pt-5'>
-                                            <div className='flex flex-col gap-2'>
-                                                <p className="font-medium text-gray-600">Upload File</p>
-                                                <input
-                                                    id={option}
-                                                    type="file"
-                                                    multiple
-                                                    accept='.svg,.pdf'
-                                                    onChange={(e) => handleFileChange(e, value?.path)}
-                                                    className="hidden"
-                                                />
+                                {(value?.path && option !== "none") && <div>
+                                    <div className='my-6'>
+                                        <label className='text-black text-lg font-medium'>Select impacted pages.</label>
+                                        <div className="grid grid-cols-4 gap-1.5 mb-4">
+                                            {Object.keys(pages).map((pageName) => (
+                                                <div key={pageName} className={`text-center uppercase text-sm font-medium cursor-pointer relative border-2 ${selectedPages.includes(pageName) ? 'border-zinc-400 bg-green-200' : 'border-transparent bg-blue-50'}`}>
+                                                    <p className="px-4 py-3" onClick={() => {
+                                                        if (selectedPages.includes(pageName)) {
+                                                            let updatedNewFiles = { ...newFiles }
+                                                            const fileName = value?.path
+                                                            delete updatedNewFiles?.[fileName]?.[pages[pageName]]
+                                                            setNewFiles(updatedNewFiles)
 
-                                                <div
-                                                    onClick={() => document.getElementById(option).click()}
-                                                    onDrop={(e) => { handleDrop(e, value?.path) }}
-                                                    onDragOver={handleDragOver}
-                                                    className="w-full aspect-square p-4 border-2 border-dashed border-gray-400 cursor-pointer flex items-center justify-center min-h-72"
-                                                >
-                                                    <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in PDF/SVG format.</span>
+
+                                                            if (fileExistenceStatus[pageName]) {
+                                                                setDeleteFilesOfPages([...deleteFilesOfPages, `${pages[pageName]}<<&&>>${value?.path}`])
+                                                            }
+
+                                                            const tempSelectedPages = selectedPages.filter((page) => page !== pageName)
+                                                            setSelectedPages(tempSelectedPages)
+                                                            return
+                                                        }
+                                                        const tempDeleteFileOfPages = deleteFilesOfPages.filter((path) => path !== `${pages[pageName]}<<&&>>${value?.path}`)
+
+                                                        setDeleteFilesOfPages(tempDeleteFileOfPages)
+
+                                                        setSelectedPages((prev) => [pageName, ...prev])
+                                                    }}>
+                                                        {pageName}
+                                                    </p>
                                                 </div>
-                                            </div>
+                                            ))}
+                                        </div>
+                                    </div>
 
 
-                                            {(
-                                                <div className=" flex gap-2 flex-col">
-                                                    <p className="font-medium text-gray-600">File Preview</p>
-                                                    <div className='aspect-square p-5 bg-design/5 border-2 border-dark/5 border-gray-400 w-full overflow-hidden items-center justify-center flex flex-col'>
+                                    <div className='flex flex-col gap-4'>
+                                        {selectedPages.map((page) => {
+                                            const selectedFile = newFiles?.[value?.path]?.[pages[page]] ? newFiles?.[value?.path]?.[pages[page]] : null;
 
-                                                        {(selectedFile?.type === "application/pdf") ? (
-                                                            <embed src={URL.createObjectURL(selectedFile)} type="application/pdf" width="100%" height="500px" />
-                                                        ) : (
-                                                            <img
-                                                                src={selectedFile ? URL.createObjectURL(selectedFile) : `${baseFilePath}/${value.path}.svg`}
-                                                                alt={selectedFile ? selectedFile.name : value.path}
-                                                                className="w-full rounded-xl"
+                                            return (
+                                                <div key={page} className='py-6 bg-yellow-50 px-6 border border-zinc-300'>
+
+                                                    <h2 className='font-medium text-black capitalize pb-2'>File for <span className='uppercase'>`{page}`</span> Page</h2>
+
+                                                    {selectedFile && <div className='px-4 py-2 rounded-lg bg-blue-200 flex items-center justify-between'>
+                                                        <p>Selected file : <span className='font-medium text-red-800'>{selectedFile.name}</span> </p>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 hover:text-red-700 cursor-pointer" onClick={() => {
+                                                            const updatedFiles = { ...newFiles }
+                                                            delete updatedFiles?.[value?.path][pages[page]]
+                                                            setNewFiles(updatedFiles)
+                                                        }}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </div>}
+
+                                                    <div className='grid grid-cols-2 gap-4 pt-1'>
+                                                        <div className='flex flex-col gap-2'>
+                                                            <p className="font-medium text-gray-600">Change File</p>
+                                                            <input
+                                                                id={page}
+                                                                type="file"
+                                                                multiple
+                                                                accept='.svg,.pdf'
+                                                                onChange={(e) => handleFileChange(e, setNewFiles, page)}
+                                                                className="hidden"
                                                             />
+
+                                                            <div
+                                                                onClick={() => handleClick(page)}
+                                                                onDrop={(e) => { handleDrop(e, setNewFiles, page) }}
+                                                                onDragOver={handleDragOver}
+                                                                className="w-full aspect-square p-4 border-2 border-dashed border-gray-400 cursor-pointer flex items-center justify-center min-h-72"
+                                                            >
+                                                                <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in SVG format.</span>
+                                                            </div>
+                                                        </div>
+
+
+                                                        {(
+                                                            <div className=" flex gap-2 flex-col">
+                                                                <p className="font-medium text-gray-600">File Preview</p>
+                                                                <div className='aspect-square p-5 bg-design/5 border-2 border-dark/5 border-gray-400 w-full overflow-hidden items-center justify-center flex flex-col bg-white'>
+
+                                                                    {
+                                                                        selectedFile ? (selectedFile?.type === "application/pdf" ? (
+                                                                            <embed src={URL.createObjectURL(selectedFile)} type="application/pdf" width="100%" height="500px" />
+                                                                        ) : (
+                                                                            <img
+                                                                                src={URL.createObjectURL(selectedFile)}
+                                                                                alt={"base drawing"}
+                                                                                className="w-full rounded-xl"
+                                                                            />
+                                                                        )) : (
+                                                                            fileExistenceStatus[page] ? <img
+                                                                                src={`${baseFilePath}/${pages[page]}/${value?.path}.svg`}
+                                                                                alt={"base drawing"}
+                                                                                className="w-full rounded-xl"
+                                                                            /> : (
+                                                                                <p>Upload PDF or SVG File.</p>
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                </div>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
+                                            )
+                                        })}
                                     </div>
                                 </div>}
                             </div>
@@ -199,7 +355,7 @@ function UpdateChild({ parentOption = "", nestedIn = "", setUpdatedValue, update
                                     <p className='pb-2 font-medium text-lg '>Nested Childs</p>
                                     <div className='pl-3 ml-3 border-l-2 border-dark/10 my-2 '>
                                         {Object.entries(value?.options).map(([subOption, subValue]) => (
-                                            <UpdateChild parentOption={option} nestedIn={renamedOption} key={subOption} updatedValue={updatedValue} setUpdatedValue={setUpdatedValue} option={subOption} value={subValue} />
+                                            <UpdateChild setFileCounts={setFileCounts} fileCounts={fileCounts} parentOption={option} nestedIn={renamedOption} key={subOption} updatedValue={updatedValue} setUpdatedValue={setUpdatedValue} option={subOption} value={subValue} />
                                         ))}
                                     </div>
                                 </div>
@@ -230,6 +386,8 @@ function UpdateChild({ parentOption = "", nestedIn = "", setUpdatedValue, update
 UpdateChild.propTypes = {
     nestedIn: PropTypes.string,
     parentOption: PropTypes.string,
+    fileCounts: PropTypes.object,
+    setFileCounts: PropTypes.func,
     setUpdatedValue: PropTypes.func.isRequired,
     updatedValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.object]).isRequired,
     option: PropTypes.string.isRequired,

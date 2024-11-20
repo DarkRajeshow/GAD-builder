@@ -59,7 +59,8 @@ function DeleteForm() {
         let structure = generateStructure({
             updatedAttributes: attributes
         })
-
+        
+        
         const body = {
             structure: structure,
             filesToDelete: extractPaths()

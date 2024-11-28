@@ -261,9 +261,9 @@ const Navbar = () => {
                         <Link to="/" className={`user.usernamehover:text-blue-200 ${location.pathname == '/' && 'border-b-2 border-b-dark/40'}`}>
                             Home
                         </Link>
-                        <Link to="/designs" className={`user.usernamehover:text-blue-200 ${location.pathname == '/designs' && 'border-b-2 border-b-dark/40'}`}>
+                        {/* <Link to="/designs" className={`user.usernamehover:text-blue-200 ${location.pathname == '/designs' && 'border-b-2 border-b-dark/40'}`}>
                             My Designs
-                        </Link>
+                        </Link> */}
                     </div>
                     <div className="flex space-x-4">
                         {isAuthenticated ? (

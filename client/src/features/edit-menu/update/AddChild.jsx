@@ -3,20 +3,26 @@ import { toast } from "sonner";
 import { handleClick, handleDragOver } from "../../../utility/dragDrop";
 import PropTypes from 'prop-types';
 import useStore from "../../../store/useStore";
+import { useEffect } from "react";
 
 
 function AddChild({ nestedIn = "", setOperation, updatedValue }) {
 
-    const { menuOf, newFiles, setNewFiles, setUpdatedAttributes, updatedAttributes, uniqueFileName, setUniqueFileName } = useStore();
+    const { menuOf, newFiles, setNewFiles, setUpdatedAttributes, updatedAttributes, uniqueFileName, setUniqueFileName, pages } = useStore();
     const [optionName, setOptionName] = useState("");
     const [isParent, setIsParent] = useState(false);
     const [isAttributeAlreadyExist, setIsAttributeAlreadyExist] = useState(false)
+    const [selectedPages, setSelectedPages] = useState(['gad']);
 
-    const handleFileChange = (e, title) => {
+
+    const handleFileChange = (e, setFiles, title, page) => {
         if (e.target.files[0].type === 'image/svg+xml' || e.target.files[0].type === 'application/pdf') {
-            setNewFiles({
+            setFiles({
                 ...newFiles,
-                [title]: e.target.files[0]
+                [title]: {
+                    ...newFiles?.[title],
+                    [pages[page]]: e.target.files[0]
+                },
             });
         }
         else {
@@ -24,12 +30,15 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
         }
     };
 
-    const handleDrop = (e, title) => {
+    const handleDrop = (e, setFiles, title, page) => {
         e.preventDefault();
         if (e.dataTransfer.files[0].type === 'image/svg+xml' || e.dataTransfer.files[0].type === 'application/pdf') {
-            setNewFiles({
+            setFiles({
                 ...newFiles,
-                [title]: e.target.files[0]
+                [title]: {
+                    ...newFiles?.[title],
+                    [pages[page]]: e.target.files[0]
+                },
             });
         }
         else {
@@ -64,6 +73,15 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
             return;
         }
 
+        if (selectedPages.length === 0) {
+            toast.error('You must select atleast 1 page.')
+            return;
+        }
+
+        if (!newFiles?.[uniqueFileName] || (selectedPages.length !== Object.keys(newFiles?.[uniqueFileName]).length)) {
+            toast.error(`You need to upload ${selectedPages.length} files, but you've only uploaded ${Object.keys(newFiles?.[uniqueFileName]).length}.`);
+            return;
+        }
 
         const tempAttributes = updateValue(updatedAttributes);
         const tempUpdateFunc = () => {
@@ -120,6 +138,10 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
         setUniqueFileName()
         setOperation("");
     }
+
+    useEffect(() => {
+        console.log(newFiles);
+    }, [newFiles])
 
 
     return (
@@ -186,7 +208,7 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
                     </div>
                     <div className='flex items-center justify-end gap-3 text-sm pt-10'>
                         <button type="button" onClick={() => setOperation("")} className={`flex items-center justify-center gap-3 hover:bg-zinc-400/30 py-2 px-3 rounded-md  text-dark font-medium relative bg-design`}>Cancel</button>
-                        <button disabled={isAttributeAlreadyExist || !optionName} onClick={handleAdd} className={`flex items-center justify-center gap-3 py-2 px-3 rounded-md  text-dark font-medium relative ${(isAttributeAlreadyExist || !optionName) ? 'bg-gray-300' : 'bg-green-300/90 hover:bg-green-300 '}`}>Add Option</button>
+                        <button type="button" disabled={isAttributeAlreadyExist || !optionName} onClick={handleAdd} className={`flex items-center justify-center gap-3 py-2 px-3 rounded-md  text-dark font-medium relative ${(isAttributeAlreadyExist || !optionName) ? 'bg-gray-300' : 'bg-green-300/90 hover:bg-green-300 '}`}>Add Parent Option</button>
                     </div>
                 </div> : <div className='rounded-lg bg-white overflow-hidden py-4 px-4 border-2 border-dark/5'>
                     <div>
@@ -264,53 +286,98 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
                                 )}
                             </div> */}
 
-                            <div className='grid grid-cols-2 gap-4 pt-5'>
-                                <div className='flex flex-col gap-2'>
-                                    <p className="font-medium text-gray-600">Upload File</p>
-                                    <input
-                                        id='customization'
-                                        type="file"
-                                        multiple
-                                        accept='.svg,.pdf'
-                                        onChange={(e) => handleFileChange(e, uniqueFileName)}
-                                        className="hidden"
-                                    />
+                            <>
+                                <div>
+                                    <label className='text-black text-sm font-medium'>Select impacted pages.</label>
+                                    <div className="grid grid-cols-4 gap-1.5">
+                                        {Object.keys(pages).map((pageName) => (
+                                            <div key={pageName} className={`text-center uppercase text-sm font-medium cursor-pointer relative border-2 ${selectedPages.includes(pageName) ? 'border-zinc-400 bg-green-200' : 'border-transparent bg-blue-50'}`}>
+                                                <p className="px-4 py-3" onClick={() => {
+                                                    if (selectedPages.includes(pageName)) {
+                                                        let updatedNewFiles = { ...newFiles }
+                                                        delete updatedNewFiles[pages[pageName]]
+                                                        setNewFiles(updatedNewFiles)
 
-                                    <div
-                                        onClick={() => handleClick('customization')}
-                                        onDrop={(e) => { handleDrop(e, uniqueFileName) }}
-                                        onDragOver={handleDragOver}
-                                        className="w-full aspect-square p-4 border-2 border-dashed border-gray-400 cursor-pointer flex items-center justify-center min-h-72"
-                                    >
-                                        <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in PDF/SVG format.</span>
+                                                        const tempSelectedPages = selectedPages.filter((page) => page !== pageName)
+                                                        setSelectedPages(tempSelectedPages)
+                                                        return
+                                                    }
+                                                    setSelectedPages((prev) => [...prev, pageName])
+                                                }}>
+                                                    {pageName}
+                                                </p>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
 
-                                {(
-                                    <div className=" flex gap-2 flex-col">
-                                        <p className="font-medium text-gray-600">File Preview</p>
-                                        {/* <div className='font-medium'>{selectedFile ? "Preview" : "Current file"}</div> */}
-                                        <div className='aspect-square p-5 bg-design/5 border-2 border-dark/5 border-gray-400 w-full overflow-hidden items-center justify-center flex flex-col'>
+                                <div className='flex flex-col gap-4 mt-6'>
+                                    {selectedPages.map((page) => (
+                                        <div key={page} className='py-6 bg-yellow-50 px-6 border border-zinc-300'>
 
-                                            {
-                                                selectedFile ? (selectedFile?.type === "application/pdf" ? (
-                                                    <embed src={URL.createObjectURL(selectedFile)} type="application/pdf" width="100%" height="500px" />
-                                                ) : (
-                                                    <img
-                                                        src={URL.createObjectURL(selectedFile)}
-                                                        alt={selectedFile.name}
-                                                        className="w-full rounded-xl"
+                                            <h2 className='font-medium text-black capitalize pb-2'>File for <span className='uppercase'>`{page}`</span> Page</h2>
+
+                                            {newFiles?.[uniqueFileName]?.[pages[page]] && <div className='px-4 py-2 rounded-lg bg-blue-200 flex items-center justify-between'>
+                                                <p>Selected file : <span className='font-medium text-red-800'>{newFiles?.[uniqueFileName]?.[pages[page]].name}</span> </p>
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 hover:text-red-700 cursor-pointer" onClick={() => {
+                                                    const updatedFiles = { ...newFiles }
+                                                    delete updatedFiles[pages[page]]
+                                                    setNewFiles(updatedFiles)
+                                                }}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                                </svg>
+                                            </div>}
+
+                                            <div className='grid grid-cols-2 gap-4 pt-1'>
+                                                <div className='flex flex-col gap-2'>
+                                                    <p className="font-medium text-gray-600">Change File</p>
+                                                    <input
+                                                        id={page}
+                                                        type="file"
+                                                        multiple
+                                                        accept='.svg,.pdf'
+                                                        onChange={(e) => handleFileChange(e, setNewFiles, uniqueFileName, page)}
+                                                        className="hidden"
                                                     />
-                                                )) : (
-                                                    <p>Upload pdf or svg file to preview</p>
-                                                )
-                                            }
 
+                                                    <div
+                                                        onClick={() => handleClick(page)}
+                                                        onDrop={(e) => { handleDrop(e, setNewFiles, uniqueFileName, page) }}
+                                                        onDragOver={handleDragOver}
+                                                        className="w-full aspect-square p-4 border-2 border-dashed border-gray-400 cursor-pointer flex items-center justify-center min-h-72"
+                                                    >
+                                                        <span className='text-sm w-60 mx-auto text-center'>Drag and drop the customization option in SVG format.</span>
+                                                    </div>
+                                                </div>
+
+
+                                                {(
+                                                    <div className=" flex gap-2 flex-col">
+                                                        <p className="font-medium text-gray-600">File Preview</p>
+                                                        <div className='aspect-square p-5 bg-design/5 border-2 border-dark/5 border-gray-400 w-full overflow-hidden items-center justify-center flex flex-col'>
+
+                                                            {
+                                                                newFiles?.[uniqueFileName]?.[pages[page]] ? (newFiles?.[uniqueFileName]?.[pages[page]]?.type === "application/pdf" ? (
+                                                                    <embed src={URL.createObjectURL(newFiles?.[uniqueFileName]?.[pages[page]])} type="application/pdf" width="100%" height="500px" />
+                                                                ) : (
+                                                                    <img
+                                                                        src={URL.createObjectURL(newFiles?.[uniqueFileName]?.[pages[page]])}
+                                                                        alt={"base drawing"}
+                                                                        className="w-full rounded-xl"
+                                                                    />
+                                                                )) : (
+                                                                    <p>Upload pdf or svg file to preview</p>
+                                                                )
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
+                                    ))}
+                                </div>
+                            </>
                         </div>
                     </div>
                     <div className='flex items-center justify-end gap-3 text-sm pt-10'>
@@ -320,7 +387,7 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
                             delete updatedNewFiles[uniqueFileName]
                             setNewFiles(newFiles)
                         }} className={`flex items-center justify-center gap-3 hover:bg-zinc-400/30 py-2 px-3 rounded-md  text-dark font-medium relative bg-design`}>Cancel</button>
-                        <button disabled={isAttributeAlreadyExist || !optionName} onClick={handleAdd} className={`flex items-center justify-center gap-3 py-2 px-3 rounded-md  text-dark font-medium relative  ${(isAttributeAlreadyExist || !optionName) ? 'bg-gray-300' : 'bg-green-300/90 hover:bg-green-300 '}`}>Add Option</button>
+                        <button type="button" disabled={isAttributeAlreadyExist || !optionName} onClick={handleAdd} className={`flex items-center justify-center gap-3 py-2 px-3 rounded-md  text-dark font-medium relative  ${(isAttributeAlreadyExist || !optionName) ? 'bg-gray-300' : 'bg-green-300/90 hover:bg-green-300 '}`}>Add Option</button>
                     </div>
                 </div>
                 }

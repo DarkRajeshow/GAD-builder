@@ -42,6 +42,8 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
         lastMousePosition: { x: 0, y: 0 },
         selection: null,
     });
+    const [existingFiles, setExistingFiles] = useState({});
+
     const containerRef = useRef(null);
     const rotateSVG = () => {
         const newRotation = (rotation + 90) % 360; // Increment rotation by 90°
@@ -214,7 +216,6 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
         return null;
     }, [design.folder, fileVersion, pages, selectedPage]);
 
-    const [existingFiles, setExistingFiles] = useState({});
 
     // Generate file paths and log them for debugging
     const filePaths = useMemo(() => {

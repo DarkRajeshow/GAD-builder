@@ -58,6 +58,7 @@ const AddForm = ({
         const formData = new FormData();
 
         setAddAttributeLoading(true)
+        
         if (!loading) {
             let structure = generateStructure({
                 updatedAttributes: tempDesignAttributes

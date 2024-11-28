@@ -16,6 +16,8 @@ import useStore from "../../store/useStore"
 import { popUpQuestions, sideMenuTypes } from "../../constants";
 import filePath from "../../utility/filePath";
 import { checkFileExists } from "../../utility/checkFileExists";
+import PageList from "./PageList";
+import DeletePageConfirmation from "./DeletePageConfirmation";
 
 
 
@@ -34,9 +36,9 @@ function SideMenu() {
     const [choosenPage, setChoosenPage] = useState('gad')
     const [fileExistenceStatus, setFileExistenceStatus] = useState({});
     const [openPageDeleteWarning, setOpenPageDeleteWarning] = useState('');
+
+    
     const { id } = useParams();
-
-
 
     // Function to handle file selection
     const handleFileChange = (e) => {
@@ -356,7 +358,7 @@ function SideMenu() {
                                         //designTypeCode
 
                                         console.log(design?.designType);
-                                        
+
                                         if (design?.designType === "motor") {
 
                                             setTempBaseDrawing(structure?.mountingTypes[e.target.value]?.baseDrawing)
@@ -407,30 +409,9 @@ function SideMenu() {
                                 }
                             </div>
                             <div>
-                                <p className='font-medium mb-3 capitalize'>pages</p>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {Object.keys(tempPages).map((pageName) => (
-                                        <div key={pageName} className={`text-center px-4 uppercase transition-none font-medium cursor-pointer relative border ${fileExistenceStatus[pageName] ? "bg-exists/30" : "bg-notExists/20"} ${choosenPage === pageName ? 'border-black' : 'border-transparent'}`}>
-                                            <p className="mx-4 py-3" onClick={() => {
-                                                setChoosenPage(pageName)
-                                            }}>
-                                                {pageName}
-                                            </p>
+                                <PageList choosenPage={choosenPage} fileExistenceStatus={fileExistenceStatus} openDeleteConfirmation={openDeleteConfirmation} setChoosenPage={setChoosenPage} tempPages={tempPages}></PageList>
 
-                                            {pageName !== 'gad' && <svg onClick={() => openDeleteConfirmation(pageName)} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 rounded-full cursor-pointer transition-all absolute right-2 top-2 text-red-700">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                            </svg>}
-                                        </div>
-                                    ))}
-
-                                </div>
-                                {openPageDeleteWarning && <div className='rounded-lg bg-red-50 border-red-300/40 border overflow-hidden py-4 px-4 flex flex-col gap-3 mt-4'>
-                                    <h1 className='font-medium'>If you delete the page `{openPageDeleteWarning}`, all associated files will also be deleted. Are you sure you want to continue?</h1>
-                                    <div className='flex items-center justify-start gap-2'>
-                                        <button onClick={handleDelete} type='button' className='bg-red-300 hover:bg-red-400 border hover:border-black transition-all font-normal py-1.5 px-4 rounded-full'>Yes</button>
-                                        <button onClickCapture={() => setOpenPageDeleteWarning('')} type='button' className='bg-white hover:bg-blue-50 border hover:border-black font-normal py-1.5 px-4 rounded-full'>No</button>
-                                    </div>
-                                </div>}
+                                <DeletePageConfirmation handleDelete={handleDelete} openPageDeleteWarning={openPageDeleteWarning} setOpenPageDeleteWarning={setOpenPageDeleteWarning}></DeletePageConfirmation>
                             </div>
                         </div>
 

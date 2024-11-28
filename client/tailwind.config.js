@@ -33,7 +33,8 @@ const config = {
 
       },
       backgroundImage: {
-        nav: 'linear-gradient(180deg, rgba(255,249,242,1) 0%, rgba(213,246,254,1) 100%);'
+        nav: 'linear-gradient(180deg, rgba(255,249,242,1) 0%, rgba(213,246,254,1) 100%);',
+        designCard: 'radial-gradient(circle at 18.7% 37.8%, rgb(250, 250, 250) 0%, rgb(225, 234, 238) 90%);'
       },
       keyframes: {
         "accordion-down": {

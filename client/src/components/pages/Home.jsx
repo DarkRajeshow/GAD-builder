@@ -13,8 +13,8 @@ function Home() {
 
   return (
     <main className="px-10">
-      <h1 className="text-2xl py-4 font-medium">Recents Designs</h1>
-      <div className="grid grid-cols-3 gap-3 ">
+      <h1 className="text-2xl pt-10 pb-6 font-medium">Recents Designs</h1>
+      <div className="w-full flex flex-col items-start gap-3">
         {
           !fetchAllDesignsLoading && recentDesigns.map((design, index) => (
             <DesignCard design={design} key={index} />

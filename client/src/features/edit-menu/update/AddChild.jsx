@@ -62,6 +62,11 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
         return tempAttributes;
     };
 
+    useEffect(() => {
+        console.log(optionName);
+    }, [optionName])
+
+
     const handleAdd = () => {
 
         if (optionName === "") {
@@ -119,10 +124,18 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
                 }
                 else {
                     if (menuOf.length === 2) {
+                        if (!tempAttributes[menuOf[0]]?.options[menuOf[1]]?.options) {
+                            tempAttributes[menuOf[0]].options[menuOf[1]].options = {}
+                        }
+
                         tempAttributes[menuOf[0]].options[menuOf[1]].options[optionName] = {
                             path: uniqueFileName
                         };
+
                     } else if (menuOf.length === 1) {
+                        if (!tempAttributes[menuOf[0]]?.options) {
+                            tempAttributes[menuOf[0]].options = {}
+                        }
                         tempAttributes[menuOf[0]].options[optionName] = {
                             path: uniqueFileName
                         };
@@ -142,6 +155,9 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
     useEffect(() => {
         console.log(newFiles);
     }, [newFiles])
+    useEffect(() => {
+        console.log(updatedAttributes);
+    }, [updatedAttributes])
 
 
     return (
@@ -185,7 +201,7 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
                                     const newOptionName = e.target.value;
                                     const optionsToCheck = updatedValue?.options;
 
-                                    if (optionsToCheck[newOptionName]) {
+                                    if (optionsToCheck && optionsToCheck[newOptionName]) {
                                         toast.error(`Option name "${newOptionName}" already exists! Please choose a different name.`);
                                         setIsAttributeAlreadyExist(true)
                                     }
@@ -227,8 +243,9 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
                                 onChange={(e) => {
                                     const newOptionName = e.target.value;
                                     const optionsToCheck = updatedValue?.options;
+                                    console.log(updateValue);
 
-                                    if (optionsToCheck[newOptionName]) {
+                                    if (optionsToCheck && optionsToCheck[newOptionName]) {
                                         toast.error(`Option name "${newOptionName}" already exists! Please choose a different name.`);
                                         setIsAttributeAlreadyExist(true)
                                     }
@@ -302,7 +319,7 @@ function AddChild({ nestedIn = "", setOperation, updatedValue }) {
                                                         setSelectedPages(tempSelectedPages)
                                                         return
                                                     }
-                                                    setSelectedPages((prev) => [...prev, pageName])
+                                                    setSelectedPages((prev) => [pageName, ...prev])
                                                 }}>
                                                     {pageName}
                                                 </p>

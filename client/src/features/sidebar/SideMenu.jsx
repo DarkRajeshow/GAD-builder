@@ -37,7 +37,7 @@ function SideMenu() {
     const [fileExistenceStatus, setFileExistenceStatus] = useState({});
     const [openPageDeleteWarning, setOpenPageDeleteWarning] = useState('');
 
-    
+
     const { id } = useParams();
 
     // Function to handle file selection
@@ -84,25 +84,34 @@ function SideMenu() {
             }
 
             else if (!newBaseDrawingFiles) {
+
+                //shift
                 try {
 
                     let changedPages;
+                    let tempUpdatedDesignAttributes;
                     // Conditional assignment based on design type
                     if (design?.designType === "motor") {
                         changedPages = design.structure.mountingTypes[tempSelectedCategory].pages;
+                        tempUpdatedDesignAttributes = design.structure.mountingTypes[tempSelectedCategory].attributes || {};
+                        console.log(design.structure.mountingTypes[tempSelectedCategory].attributes || {});
+
                     } else if (design?.designType === "smiley") {
                         changedPages = design.structure.sizes[tempSelectedCategory].pages;
+                        tempUpdatedDesignAttributes = design.structure.sizes[tempSelectedCategory].attributes || {};
                     }
 
-
                     console.log(changedPages);
-
+                    console.log(tempUpdatedDesignAttributes);
 
                     let structure = generateStructure({
+                        updatedAttributes: tempUpdatedDesignAttributes,
                         updatedCategory: tempSelectedCategory,
                         updatedPages: tempPages,
                         updatedBaseDrawing: tempBaseDrawing
                     })
+
+                    console.log(structure);
 
 
                     const pagesNames = Object.keys(changedPages).filter((page) => !tempPages[page])

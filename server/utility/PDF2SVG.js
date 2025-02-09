@@ -5,7 +5,7 @@ import { exec } from 'child_process'
 // Certainly! Let’s break down the steps to convert a PDF to SVG using Inkscape in a Node.js program:
 
 // Install Inkscape:
-// If you haven’t already, download and install Inkscape from the official website (as mentioned earlier).
+// If you haven’t already, download and install Inkscape from the official website (as mentioned earlier) --- download following version #Inkscape 0.92.4 (5da689c313, 2019-01-14)
 // Make sure the Inkscape executable is added to your system’s PATH environment variable.
 // Create a Node.js Project:
 // If you don’t have a Node.js project set up, create a new directory for your project.

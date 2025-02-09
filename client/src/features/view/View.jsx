@@ -8,6 +8,8 @@ import {
     AlertDialog,
     AlertDialogContent,
     AlertDialogDescription,
+    // AlertDialogFooter,
+    // AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "../../components/ui/Dialog"
@@ -253,6 +255,73 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
         }
     }, [baseDrawing, pages, selectedPage, design.folder])
 
+
+
+
+
+
+
+
+
+
+
+
+    // to be deleted in the future 
+
+
+    // const [isOpen, setIsOpen] = useState(true);
+    // const [companyCode, setCompanyCode] = useState('');
+    // const [codePosition, setCodePosition] = useState({ x: 50, y: window.innerHeight * 0.8 });
+
+    // // Generate design hash based on components
+    // const generateDesignHash = () => {
+    //     const components = [baseDrawing?.path, ...Object.values(designAttributes)
+    //         .map(value => value?.selectedOption || value?.value)
+    //         .filter(Boolean)];
+    //     return 'DESIGN-' + components.join('-').replace(/[^a-zA-Z0-9]/g, '').substr(0, 8).toUpperCase();
+    // };
+
+    // const CodeGroup = () => {
+    //     return (
+    //         <g
+    //             id="company-code-group"
+    //             className='select-none'
+    //             style={{
+    //                 transform: `scale(${zoom}) translate(${offset.x + codePosition.x / zoom}px, ${offset.y + codePosition.y / zoom}px))`,
+    //                 transformOrigin: 'center',
+    //                 cursor: isDragging ? 'grabbing' : 'grab',
+    //             }}
+    //         >
+    //             <rect
+    //                 width="200"
+    //                 height="50"
+    //                 fill="transparent"
+    //                 fillOpacity="1"
+    //             />
+    //             <text
+    //                 x="10"
+    //                 y="30"
+    //                 fontSize="20"
+    //                 fill="black"
+    //             >
+    //                 sdfkdsfksdkjh
+    //             </text>
+    //         </g>
+    //     );
+    // };
+
+    // const handleCodeDrag = (e) => {
+    //     if (e.target.closest('#company-code-group')) {
+    //         const svgRect = e.target.closest('svg').getBoundingClientRect();
+    //         const newX = (e.clientX - svgRect.left) / zoom - offset.x;
+    //         const newY = (e.clientY - svgRect.top) / zoom - offset.y;
+    //         setCodePosition({ x: newX, y: newY });
+    //     }
+    // };
+
+
+
+
     return (
         <AlertDialog open={isPopUpON}>
             <AlertDialogContent className="bg-theme max-h-[80vh] w-auto overflow-y-scroll p-6">
@@ -381,7 +450,33 @@ function View({ generatePDF, reference, zoom, setZoom, offset, setOffset }) {
                                     )
                                 )
                             })}
+
+                            {/* {companyCode && <CodeGroup />} */}
                         </svg>}
+
+
+                        {/* experimental */}
+
+                        {/* <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Enter Company Code</AlertDialogTitle>
+                                </AlertDialogHeader>
+                                <div className="py-4">
+                                    <input
+                                        value={companyCode}
+                                        onChange={(e) => setCompanyCode(e.target.value)}
+                                        placeholder="Enter company-specific code"
+                                        className="w-full"
+                                    />
+                                </div>
+                                <AlertDialogFooter>
+                                    <button onClick={() => setIsOpen(false)}>
+                                        Save Design
+                                    </button>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog> */}
                     </div>
                     {absoluteSelection && (
                         <div

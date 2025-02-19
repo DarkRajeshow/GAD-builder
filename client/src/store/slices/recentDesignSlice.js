@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { getRecentDesignsAPI } from "../../utility/api";
+import { getRecentDesignsAPI } from "../../lib/api";
 
 // Slice for recent designs and related loading state
 const createRecentDesignSlice = (set) => ({

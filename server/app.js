@@ -23,7 +23,7 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use("/api/uploads", express.static("public/uploads"));
 
 // Routes
-app.use("/api/user", UserRoutes);
+app.use("/api/users", UserRoutes);
 app.use("/api/designs", DesignRoutes);
 
 // Error handler

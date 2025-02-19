@@ -1,12 +1,12 @@
 import './App.css';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import Home from './components/pages/Home';
-import SignUp from './components/pages/SignUp';
-import SignIn from './components/pages/SignIn';
+import Home from './pages/Home';
+import SignUp from './pages/SignUpPage';
+import SignIn from './pages/SignInPage';
 import Navbar from './components/layout/Navbar';
 import { useEffect, useState } from 'react';
-import Design from './components/pages/Design';
+import Design from './pages/Design';
 
 function App() {
 

@@ -8,7 +8,7 @@ const createDesignSlice = (set) => ({
     selectedCategory: '',
     baseDrawing: '',
     updatedAttributes: {},
-    pages: [],
+    pages: {},
     selectedPage: 'gad',
     rotation: 0,
     // updatedValue: { value: {}, version: 0 },

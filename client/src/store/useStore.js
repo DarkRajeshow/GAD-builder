@@ -7,7 +7,7 @@ import createRecentDesignSlice from './slices/recentDesignSlice';
 import { create } from 'zustand';
 import createUISlice from './slices/uiSlice';
 import { toast } from 'sonner';
-import { getDesignByIdAPI } from "../utility/api";
+import { getDesignByIdAPI } from "../lib/api";
 
 // Zustand Store
 const useStore = create(

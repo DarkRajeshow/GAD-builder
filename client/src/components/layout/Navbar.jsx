@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { getUserAPI, createEmptyDesignAPI, logoutAPI } from '../../utility/api';
+import { getUserAPI, createEmptyDesignAPI, logoutAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import filePath from '../../utility/filePath';
+import filePath from '../../utils/filePath';
 import {
     AlertDialog,
     AlertDialogContent,
